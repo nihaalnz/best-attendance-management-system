@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'auth_user',
     'teacher',
     'course',
+    'class',
 ]
 
 MIDDLEWARE = [
