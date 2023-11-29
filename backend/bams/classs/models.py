@@ -11,6 +11,7 @@ class Class(models.Model):
     cancelled_by = models.ForeignKey('auth_user.User', on_delete=models.SET_NULL, null=True, related_name='cancelled_classes', blank=True)
 
     class Meta:
+        verbose_name = 'Class'
         verbose_name_plural = 'Classes'
 
     def __str__(self):

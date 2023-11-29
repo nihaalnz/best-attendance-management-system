@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
                 ('end_time', models.TimeField()),
                 ('date', models.DateField()),
                 ('is_cancelled', models.BooleanField(default=False, verbose_name='Is Cancelled')),
-                ('cancelled_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='cancelled_classes', to=settings.AUTH_USER_MODEL)),
+                ('cancelled_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='cancelled_classes', to=settings.AUTH_USER_MODEL)),
                 ('course', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='classes', to='course.course')),
             ],
             options={
