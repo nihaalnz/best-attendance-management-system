@@ -1,3 +1,6 @@
+from django.contrib.auth import authenticate, login
+from rest_framework.authtoken.models import Token
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from auth_user.models import User
@@ -73,3 +76,22 @@ class CountriesView(APIView):
             [{"code": code, "name": name} for code, name in dict(countries).items()],
             status=200,
         )
+
+class LoginView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        user = authenticate(request, username=email, password=password)
+        user_serializer = UserSerializer(data=request.data)
+
+        if user is not None:
+            login(request, user)
+            token, created = Token.objects.get_or_create(user=user)
+            return Response({"token": token.key}, status=200)
+        else:
+            return Response({"detail": "Invalid credentials"}, status=401)
+
+

@@ -4,6 +4,8 @@ import Image from "next/image";
 import { Label } from "@/components/ui/label";
 import SignUpForm from "@/components/sign-up-form";
 
+import LogInForm from "@/components/login-form";
+
 export default function Home() {
   return (
     <main className="container grid grid-cols-2 min-h-screen max-h-screen items-center">
@@ -13,7 +15,7 @@ export default function Home() {
         &quot;Best Attendance Management System at the palm of your hands&quot;
         </Label>
         <div className="mt-5 flex justify-center">
-          <SignUpForm />
+          <LogInForm />
         </div>
       </div>
       <div className="flex justify-center">
