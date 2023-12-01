@@ -1,2 +1,4 @@
 Django
 djangorestframework
+django-cors-headers
+django-countries
