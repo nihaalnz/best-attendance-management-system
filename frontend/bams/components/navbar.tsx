@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { useSession } from "next-auth/react";
+import { Sidebar } from "./sidebar";
 
 export default function Nav() {
   const { data: session } = useSession();
@@ -11,12 +12,15 @@ export default function Nav() {
     <nav className="fixed top-0 z-40 w-full backdrop-blur-lg">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex gap-10 items-center">
-          <Link href={siteConfig.logo.url}>
-            <div className="flex gap-2 items-center">
-              <siteConfig.logo.icon className="h-6 w-6" />
-              <p className="font-bold">{siteConfig.name}</p>
-            </div>
-          </Link>
+          <div className="flex gap-3 items-center">
+            <Sidebar />
+            <Link href={siteConfig.logo.url}>
+              <div className="flex gap-2 items-center">
+                <siteConfig.logo.icon className="h-6 w-6" />
+                <p className="font-bold">{siteConfig.name}</p>
+              </div>
+            </Link>
+          </div>
 
           {siteConfig.mainNav.map((navItem) => {
             return (
