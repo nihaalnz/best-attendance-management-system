@@ -8,7 +8,7 @@ export default function Nav() {
   const { data: session } = useSession();
 
   return (
-    <nav className="fixed top-0 z-40 w-full border-b backdrop-blur-md">
+    <nav className="fixed top-0 z-40 w-full backdrop-blur-lg">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex gap-10 items-center">
           <Link href={siteConfig.logo.url}>
@@ -31,11 +31,11 @@ export default function Nav() {
         </div>
         <div className="flex items-center gap-3">
           {session?.user ? (
-            <Link href={"/sign-in"}>
-              <Button variant={"secondary"}>Log In</Button>
+            <Link href={"/api/auth/signout"}>
+              <Button variant={"secondary"}>Log Out</Button>
             </Link>
           ) : (
-            <Link href={"/"}>
+            <Link href={"/signin"}>
               <Button variant={"secondary"}>Sign In</Button>
             </Link>
           )}
