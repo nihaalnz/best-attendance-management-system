@@ -9,6 +9,7 @@ import {
   BookA,
   Users,
   ScrollText,
+  GraduationCap,
 } from "lucide-react";
 
 export const Icons = {
@@ -21,6 +22,7 @@ export const Icons = {
   bookMarked: BookMarked,
   users: Users,
   scrollText: ScrollText,
+  graduationCap: GraduationCap,
 
   logo: (props: LucideProps) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>

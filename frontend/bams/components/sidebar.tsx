@@ -39,9 +39,9 @@ export function Sidebar() {
                 </Button>
               ))}
           </div>
-          <Link className="self-end" href="/api/auth/signout">
-            <Button variant={"outline"}>
-              <LogOut height="20px" width="20px" />
+          <Link href="/api/auth/signout">
+            <Button className="w-full">
+              <LogOut className="mr-2" height="20px" width="20px" /> Logout
             </Button>
           </Link>
         </div>

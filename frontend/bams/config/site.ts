@@ -65,6 +65,38 @@ export const siteConfig = {
         icon: Icons.scrollText,
       },
     ],
+    admin: [
+      {
+        title: "Dashboard",
+        href: "/dashboard",
+        icon: Icons.layoutDashboard,
+      },
+      {
+        title: "Manage Attendance",
+        href: "/attendance",
+        icon: Icons.bookA,
+      },
+      {
+        title: "Manage Classes",
+        href: "/students",
+        icon: Icons.bookMarked,
+      },
+      {
+        title: "Manage Students",
+        href: "/settings",
+        icon: Icons.users,
+      },
+      {
+        title: "Manage Teachers",
+        href: "/settings",
+        icon: Icons.users,
+      },
+      {
+        title: "Enroll Students",
+        href: "/settings",
+        icon: Icons.graduationCap,
+      },
+    ],
   },
   links: [
     {
