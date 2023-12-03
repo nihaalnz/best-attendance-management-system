@@ -8,3 +8,8 @@ export type Courses = {
     name: string;
     code: string;
 }[];
+
+export type backEndErrors = {
+    [key: string]: string[];
+  };
+  
