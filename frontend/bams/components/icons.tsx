@@ -1,10 +1,26 @@
-import { Bell, BellDot, LucideProps, Moon, SunMedium } from "lucide-react";
+import {
+  Bell,
+  BellDot,
+  LucideProps,
+  Moon,
+  SunMedium,
+  LayoutDashboard,
+  BookMarked,
+  BookA,
+  Users,
+  ScrollText,
+} from "lucide-react";
 
 export const Icons = {
   sun: SunMedium,
   moon: Moon,
   bell: Bell,
   bellDot: BellDot,
+  layoutDashboard: LayoutDashboard,
+  bookA: BookA,
+  bookMarked: BookMarked,
+  users: Users,
+  scrollText: ScrollText,
 
   logo: (props: LucideProps) => (
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" {...props}>
