@@ -85,13 +85,9 @@ class LoginView(APIView):
         password = request.data.get("password")
 
         user = authenticate(request, username=email, password=password)
-        user_serializer = UserSerializer(data=request.data)
-
         if user is not None:
-            login(request, user)
+            login(request, user) # Pointless in DRF
             token, created = Token.objects.get_or_create(user=user)
-            return Response({"token": token.key}, status=200)
+            return Response({"token": token.key, "id": user.email}, status=200)
         else:
-            return Response({"detail": "Invalid credentials"}, status=401)
-
-
+            return Response({"detail": ["Invalid credentials"]}, status=401)
