@@ -82,6 +82,11 @@ export const siteConfig = {
         icon: Icons.bookMarked,
       },
       {
+        title: "Manage Courses",
+        href: "/courses",
+        icon: Icons.bookMarked,
+      },
+      {
         title: "Manage Students",
         href: "/settings",
         icon: Icons.users,

@@ -33,10 +33,12 @@ export function Sidebar() {
             {role &&
               // @ts-ignore
               siteConfig.sideNav[role].map((item, i) => (
+              <Link href={item.href}>
                 <Button key={i} variant={"outline"}>
                   <item.icon height="20px" width="20px" className="mr-2" />
                   {item.title}
                 </Button>
+              </Link>
               ))}
           </div>
           <Link href="/api/auth/signout">

@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from auth_user.serializer import UserSerializer
 from student.serializer import StudentSerializer
 from teacher.serializer import TeacherSerializer
+from teacher.models import Teacher
 from student.models import Student
 from course.models import Course
 from course.serializer import CourseSerializer
@@ -65,10 +66,28 @@ class SignUpView(APIView):
             return Response(user_serializer.errors, status=400)
 
 
+class AddCourseView(APIView):
+    def post(self, request):
+        course_serializer = CourseSerializer(data=request.data)
+
+        if course_serializer.is_valid():
+            course_serializer.save()
+            return Response("Course has been successfully added!", status=201)
+        else:
+            return Response(course_serializer.errors, status=400)
+
+
 class CoursesView(APIView):
     def get(self, request):
         instance = Course.objects.all()
         serializer = CourseSerializer(instance, many=True)
+
+        return Response(serializer.data, status=200)
+
+class TeachersView(APIView):
+    def get(self, request):
+        instance = Teacher.objects.all()
+        serializer = TeacherSerializer(instance, many=True)
 
         return Response(serializer.data, status=200)
 
