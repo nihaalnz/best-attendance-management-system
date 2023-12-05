@@ -29,7 +29,7 @@ export const siteConfig = {
       },
       {
         title: "Manage Classes",
-        href: "/students",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
@@ -51,7 +51,7 @@ export const siteConfig = {
       },
       {
         title: "View Classes",
-        href: "/students",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
@@ -78,7 +78,7 @@ export const siteConfig = {
       },
       {
         title: "Manage Classes",
-        href: "/students",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {

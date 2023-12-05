@@ -11,7 +11,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input, TextArea} from "@/components/ui/input";
+import { Input} from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -192,7 +193,7 @@ const formSchema = z
             <FormItem className="col-span-4">
               <FormLabel>Description</FormLabel>
               <FormControl>
-                <TextArea placeholder="Enter Description" {...field} />
+                <Textarea placeholder="Enter Description" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

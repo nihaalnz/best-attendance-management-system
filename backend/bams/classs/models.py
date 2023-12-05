@@ -1,4 +1,5 @@
 from django.db import models
+from teacher.models import Teacher
 
 # Create your models here.
 class Class(models.Model):
@@ -9,6 +10,7 @@ class Class(models.Model):
     date = models.DateField()
     is_cancelled = models.BooleanField('Is Cancelled', default=False)
     cancelled_by = models.ForeignKey('auth_user.User', on_delete=models.SET_NULL, null=True, related_name='cancelled_classes', blank=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         verbose_name = 'Class'
