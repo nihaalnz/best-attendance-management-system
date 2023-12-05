@@ -1,1 +1,1 @@
-# best-attendance-management-system
+# BAMS
