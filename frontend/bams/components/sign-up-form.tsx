@@ -45,6 +45,15 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/components/ui/use-toast";
 import { fr } from "date-fns/locale";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 
 type backEndErrors = {
   [key: string]: string[];
@@ -62,7 +71,7 @@ const formSchema = z
     nationality: z.string().max(2),
     accountType: z.enum(["student", "teacher"]),
     student_id: z.string().optional(),
-    course: z.number().optional(),
+    course: z.array(z.number()).optional(),
     designation: z.string().optional(),
   })
   .refine(
@@ -143,7 +152,7 @@ export default function SignUpForm() {
       dob: new Date("2000-01-01"),
       accountType: "student",
       nationality: "",
-      course: 0,
+      course: [],
       student_id: "",
       designation: "",
     },
@@ -188,10 +197,15 @@ export default function SignUpForm() {
     return frontendErrors;
   };
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log({ values });
-    mutation.mutate(values);
-  };
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    const formattedValues = {
+        ...values,
+        courses: values.course, // Assuming the form field is named 'course'
+    };
+    form.reset();
+    mutation.mutate(formattedValues);
+};
+
 
   const accountType = form.watch("accountType");
 
@@ -451,52 +465,47 @@ export default function SignUpForm() {
                   <FormLabel>Course</FormLabel>
                   <br />
                   <FormControl>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}>
-                            {field.value
-                              ? dataCourses!.find(
-                                  (course) => course.id === field.value
-                                )?.name
-                              : "Select course"}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0">
-                        <Command>
-                          <CommandInput placeholder="Search language..." />
-                          <CommandEmpty>No such course found.</CommandEmpty>
-                          <CommandGroup>
-                            {dataCourses!.map((course) => (
-                              <CommandItem
-                                value={`${course.code} - ${course.name}`}
-                                key={course.id}
-                                onSelect={() => {
-                                  form.setValue("course", course.id);
-                                }}>
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    course.id === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {`${course.code} - ${course.name}`}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}>
+                          {Array.isArray(field.value) && field.value.length > 0
+                            ? "Course Selected"
+                            : "Select course"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        {dataCourses!.map((course) => (
+                          <DropdownMenuCheckboxItem
+                          key={course.id}
+                          checked={Array.isArray(field.value) && field.value.includes(course.id)}
+                          onSelect={() => {
+                            const selectedCourses: number[] = Array.isArray(field.value) ? [...field.value] : [];
+                            
+                            // Ensure that course.id is defined before processing
+                            if (course.id !== undefined) {
+                                if (selectedCourses.includes(course.id)) {
+                                    const index = selectedCourses.indexOf(course.id);
+                                    selectedCourses.splice(index, 1);
+                                } else {
+                                    selectedCourses.push(course.id);
+                                }
+                            }
+                        
+                            form.setValue("course", selectedCourses as any); // Type assertion here
+                        }}
+                        >
+                          {`${course.code} - ${course.name}`}
+                        </DropdownMenuCheckboxItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </FormControl>
                   <FormMessage />
                 </FormItem>

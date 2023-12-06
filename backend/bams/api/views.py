@@ -13,6 +13,7 @@ from course.serializer import CourseSerializer
 from django_countries import countries
 from datetime import datetime
 from django.contrib.auth.models import Group
+from django.db import transaction
 
 
 # Create your views here.
@@ -31,39 +32,44 @@ class SignUpView(APIView):
                 {"student_id": ["Student with this student_id already exists."]},
                 status=400,
             )
-        user_serializer = UserSerializer(data=request.data)
-        if user_serializer.is_valid():
-            user = user_serializer.save()
-            user.groups.add(group)
 
-            if account_type == "student":
-                student_data = request.data | {"user": user.id}
-                student_serializer = StudentSerializer(data=student_data)
-                if student_serializer.is_valid():
-                    student_serializer.save()
-                    return Response(
-                        "Student has been succesfully registered!", status=201
-                    )
-                else:
-                    print("student error")
-                    print(student_serializer.errors)
-                    return Response(student_serializer.errors, status=400)
-            elif account_type == "teacher":
-                teacher_data = request.data | {"user": user.id}
-                teacher_serializer = TeacherSerializer(data=teacher_data)
-                if teacher_serializer.is_valid():
-                    teacher_serializer.save()
-                    return Response(
-                        "Teacher has been succesfully registered!", status=201
-                    )
-                else:
-                    print("teacher error")
-                    print(teacher_serializer.errors)
-                    return Response(teacher_serializer.errors, status=400)
-        else:
-            print("user error")
-            print(user_serializer.errors)
-            return Response(user_serializer.errors, status=400)
+        # Extract the course IDs from the request data
+        course_ids = request.data.get("course", [])
+
+        with transaction.atomic():  # Use transaction to ensure atomicity
+            user_serializer = UserSerializer(data=request.data)
+            if user_serializer.is_valid():
+                user = user_serializer.save()
+                user.groups.add(group)
+
+                if account_type == "student":
+                    student_data = {"user": user.id, "student_id": request.data["student_id"], "courses": course_ids}
+                    student_serializer = StudentSerializer(data=student_data)
+                    if student_serializer.is_valid():
+                        student_serializer.save()
+                        return Response(
+                            "Student has been successfully registered!", status=201
+                        )
+                    else:
+                        print("student error")
+                        print(student_serializer.errors)
+                        return Response(student_serializer.errors, status=400)
+                elif account_type == "teacher":
+                    teacher_data = {"user": user.id}
+                    teacher_serializer = TeacherSerializer(data=teacher_data)
+                    if teacher_serializer.is_valid():
+                        teacher_serializer.save()
+                        return Response(
+                            "Teacher has been successfully registered!", status=201
+                        )
+                    else:
+                        print("teacher error")
+                        print(teacher_serializer.errors)
+                        return Response(teacher_serializer.errors, status=400)
+            else:
+                print("user error")
+                print(user_serializer.errors)
+                return Response(user_serializer.errors, status=400)
 
 
 class AddCourseView(APIView):
