@@ -1,17 +1,29 @@
 from django.contrib.auth import authenticate, login
 from rest_framework.authtoken.models import Token
-from rest_framework.permissions import AllowAny
+from rest_framework.request import Request
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from auth_user.serializer import UserSerializer
-from student.serializer import StudentSerializer
+from student.serializer import (
+    StudentSerializer,
+    ViewStudentSerializer,
+    ViewStudentAttendanceSerializer,
+)
 from teacher.serializer import TeacherSerializer
+from attendance.serializer import AttendanceSerializer, AttendanceSaveSerializer
+from attendance.models import Attendance
+from auth_user.models import User
 from student.models import Student
 from course.models import Course
 from course.serializer import CourseSerializer
 from django_countries import countries
 from datetime import datetime
 from django.contrib.auth.models import Group
+from classs.models import Class
+from classs.serializer import ClassSerializer
+from django.shortcuts import get_object_or_404
+from django.db.models import Count, Q
 
 
 # Create your views here.
@@ -100,3 +112,126 @@ class LoginView(APIView):
             )
         else:
             return Response({"detail": ["Invalid credentials"]}, status=401)
+
+
+class StudentView(APIView):
+    def get(self, request, class_id):
+        class_ = Class.objects.get(id=class_id)
+        course = class_.course
+        students = course.students.all()
+        student_serializer = ViewStudentSerializer(students, many=True)
+        return Response(student_serializer.data, status=200)
+
+
+class AttendanceView(APIView):
+    # permission_classes = [IsAuthenticated]
+    def get(self, request, class_id):
+        attendance = Attendance.objects.filter(class_attendance=class_id)
+        print(attendance)
+        return Response(AttendanceSerializer(attendance, many=True).data, status=200)
+
+    def post(self, request, class_id):
+        class_ = get_object_or_404(Class, id=class_id)
+        data = request.data
+        if class_.is_cancelled:
+            return Response("Class is cancelled, cannot mark attendance", status=400)
+        students_in_class = Student.objects.filter(course__classes=class_)
+        print(students_in_class)
+        for student in students_in_class:
+            attendance_exist = Attendance.objects.filter(
+                class_attendance=class_, student=student
+            )
+            if attendance_exist:
+                attendance_exist.update(status=data.get(student.student_id, "absent"))
+                continue
+            serializer_data = {
+                "class_attendance": class_.id,
+                "student": student.id,
+                "status": data.get(student.student_id, "absent"),
+            }
+            attendance_serializer = AttendanceSaveSerializer(data=serializer_data)
+            if attendance_serializer.is_valid():
+                attendance_serializer.save()
+            else:
+                print("attendance error")
+                print(attendance_serializer.errors)
+                return Response(attendance_serializer.errors, status=400)
+
+        return Response("Students marked successfully", status=201)
+
+
+class ClassesView(APIView):
+    def get(self, request: Request):
+        user: User = request.user
+        if user.is_superuser:
+            classes = Class.objects.all()
+        elif user.groups.first().name == "student":
+            classes = Class.objects.filter(course__students__user=request.user)
+        else:
+            classes = Class.objects.filter(course__tutors__user=request.user)
+
+        if request.query_params:
+            if request.query_params.get("date[from]"):
+                from_date = datetime.strptime(
+                    request.query_params.get("date[from]"), "%Y-%m-%d"
+                )
+                print(from_date)
+                classes = classes.filter(date__gte=from_date)
+                if request.query_params.get("date[to]"):
+                    to_date = datetime.strptime(
+                        request.query_params.get("date[to]"), "%Y-%m-%d"
+                    )
+                    classes = classes.filter(date__lte=to_date)
+
+            if request.query_params.get("course"):
+                classes = classes.filter(course=request.query_params.get("course"))
+        serializer = ClassSerializer(
+            classes.order_by("-date", "-start_time", "-is_cancelled"), many=True, context={"student_id": user.student.student_id if user.groups.first().name == "student" else None}
+        )
+        return Response(serializer.data, status=200)
+
+
+class UserCoursesView(APIView):
+    def get(self, request):
+        user: User = request.user
+        if user.is_superuser:
+            courses = Course.objects.all()
+        elif user.groups.first().name == "student":
+            courses = Course.objects.filter(students__user=request.user)
+        else:
+            courses = Course.objects.filter(tutors__user=request.user)
+        print(courses)
+        serializer = CourseSerializer(courses, many=True)
+        return Response(serializer.data, status=200)
+
+
+class CourseStudentsAttendanceView(APIView):
+    def get(self, request, course_id, format=None):
+        students = Student.objects.filter(course_id=course_id).annotate(
+            total_classes=Count("attendances"),
+            present_classes=Count(
+                "attendances",
+                filter=Q(
+                    attendances__status__in=["present", "tardy"],
+                ),
+            ),
+        )
+
+        serializer = ViewStudentAttendanceSerializer(students, many=True)
+        return Response(serializer.data)
+
+
+class StudentAttendanceCourseView(APIView):
+    def get(self, request, course_id):
+        student = request.user
+
+        course = Course.objects.get(id=course_id)
+        classes = course.classes.all()
+
+        attendance = Attendance.objects.filter(
+            class_attendance__in=classes, student__user=student
+        )
+        # print(classes)
+        serializer = AttendanceSerializer(attendance, many=True)
+
+        return Response(serializer.data, status=200)
