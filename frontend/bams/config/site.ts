@@ -12,51 +12,46 @@ export const siteConfig = {
   mainNav: [
     {
       title: "Dashboard",
-      href: "/dashboard",
+      href: "/",
     },
   ],
   sideNav: {
     teacher: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "Manage Attendance",
-        href: "/attendance",
+        href: "/classes",
         icon: Icons.bookA,
       },
       {
         title: "Manage Classes",
-        href: "/students",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
         title: "Manage Students",
-        href: "/settings",
+        href: "/courses",
         icon: Icons.users,
       },
     ],
     student: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "View Attendance",
-        href: "/attendance",
+        href: "/courses",
         icon: Icons.bookA,
       },
       {
         title: "View Classes",
-        href: "/students",
-        icon: Icons.bookMarked,
-      },
-      {
-        title: "View Result",
-        href: "/settings",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
@@ -68,22 +63,22 @@ export const siteConfig = {
     admin: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "Manage Attendance",
-        href: "/attendance",
+        href: "/classes",
         icon: Icons.bookA,
       },
       {
         title: "Manage Classes",
-        href: "/students",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
         title: "Manage Students",
-        href: "/settings",
+        href: "/courses",
         icon: Icons.users,
       },
       {
