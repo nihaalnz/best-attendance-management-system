@@ -1,137 +1,114 @@
 "use client";
 
-import { Countries, Courses, Teachers } from "@/lib/types";
+import { Courses, Teachers } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input} from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Ban } from "lucide-react";
-import { format } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/components/ui/use-toast";
-import { fr } from "date-fns/locale";
+import { Combobox } from "./combobox";
 
 type backEndErrors = {
   [key: string]: string[];
+};
+
+const formSchema = z.object({
+  name: z.string().min(3),
+  code: z.string().min(4),
+  description: z.string().min(5),
+  tutors: z.array(z.string()).min(1),
+});
+
+async function fetchTeachers() {
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/teachers`
+  );
+  return data;
 }
 
-const formSchema = z
-  .object({
-    name: z.string(),
-    code: z.string(),
-    description: z.string(),
-    tutors: z.number().optional(),
-  })
+export default function Courses() {
+  const { toast } = useToast();
 
-  async function fetchTeachers() {
-    const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/teachers`);
-    return data;
-  }
+  const {
+    data: dataTeachers,
+    isLoading: isLoadingTeachers,
+    isError: isErrorTeachers,
+  } = useQuery<Teachers>({
+    queryKey: ["teachers"],
+    queryFn: fetchTeachers,
+  });
 
-  export default function Courses() {
-    const { toast } = useToast();
-  
-    const {
-      data: dataTeachers,
-      isLoading: isLoadingTeachers,
-      isError: isErrorTeachers,
-    } = useQuery<Teachers>({
-      queryKey: ["teachers"],
-      queryFn: fetchTeachers,
-    });
-  
-    const form = useForm<z.infer<typeof formSchema>>({
-      mode: "onChange",
-      resolver: zodResolver(formSchema),
-      defaultValues: {
-        name: "",
-        code: "",
-        description: "",
-        tutors: 0,
-      },
-    });
+  const form = useForm<z.infer<typeof formSchema>>({
+    mode: "onChange",
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: "",
+      code: "",
+      description: "",
+      tutors: [],
+    },
+  });
 
-    const mutation = useMutation({
-      mutationFn: (values: z.infer<typeof formSchema>) => {
-        return axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/addcourse`, values);
-      },
-      onSuccess: (data) => {
-        console.log(data)
-        console.log("Hello World")
-        toast({
-          title: "Course created.",
-          description: `Successfully created course.`,
-        });
-      },
-      onError: (error: AxiosError) => {
-        const { response } = error;
-        if (response?.data) {
-          const backendErrors = response.data;
-          const frontendErrors = compileFrontendErrors(backendErrors as any);
-          const errors = Object.entries(frontendErrors)
-          .map(([field, reason]) => `${field}: ${reason}`)
-          .join('\n');
-          console.log("World Hello")
-          console.log(errors);
-          toast({
-            variant: "destructive",
-            title: "Course creation failed.",
-            description: `Failed to create course. ${errors}`,
-          });
-        }
-      },
-    });
-    const compileFrontendErrors = (backendErrors: backEndErrors) => {
-      let frontendErrors = {};
-      for (const field in backendErrors) {
-        if (backendErrors.hasOwnProperty(field)) {
-          (frontendErrors as any)[field] = backendErrors[field].join(", ");
-        }
-      }
-      return frontendErrors;
-    };
-  
-    const handleSubmit = (values: z.infer<typeof formSchema>) => {
-      console.log({ values });
-      mutation.mutate(values);
+  const mutation = useMutation({
+    mutationFn: (values: z.infer<typeof formSchema>) => {
+      return axios.post(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/addcourse`,
+        values
+      );
+    },
+    onSuccess: (data) => {
+      console.log(data);
+      toast({
+        title: "Course created.",
+        description: `Successfully created course.`,
+      });
       form.reset();
-    };
+    },
+    onError: (error: AxiosError) => {
+      const { response } = error;
+      if (response?.data) {
+        const backendErrors = response.data;
+        const frontendErrors = compileFrontendErrors(backendErrors as any);
+        const errors = Object.entries(frontendErrors)
+          .map(([field, reason]) => `${field}: ${reason}`)
+          .join("\n");
+        console.log("World Hello");
+        console.log(errors);
+        toast({
+          variant: "destructive",
+          title: "Course creation failed.",
+          description: `Failed to create course. ${errors}`,
+        });
+      }
+    },
+  });
+  const compileFrontendErrors = (backendErrors: backEndErrors) => {
+    let frontendErrors = {};
+    for (const field in backendErrors) {
+      if (backendErrors.hasOwnProperty(field)) {
+        (frontendErrors as any)[field] = backendErrors[field].join(", ");
+      }
+    }
+    return frontendErrors;
+  };
+
+  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    console.log(values);
+    mutation.mutate(values);
+  };
 
   if (isLoadingTeachers) {
     return <Loader2 height="100px" width="100px" className="animate-spin" />;
@@ -146,16 +123,12 @@ const formSchema = z
       </div>
     );
   }
-
-
-
-
+  console.log(dataTeachers);
   return (
     <Form {...form}>
       <form
         className="grid grid-cols-2 gap-x-4 gap-y-3 text-left items-center mx-auto"
-        onSubmit={form.handleSubmit(handleSubmit)}
-        >
+        onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
           control={form.control}
           name="name"
@@ -163,11 +136,7 @@ const formSchema = z
             <FormItem className="col-span-2">
               <FormLabel>Course Name</FormLabel>
               <FormControl>
-                <Input
-                  type="text"
-                  placeholder="Enter Course Name"
-                  {...field}
-                />
+                <Input type="text" placeholder="Enter Course Name" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -199,62 +168,22 @@ const formSchema = z
             </FormItem>
           )}
         />
-        
         <FormField
           control={form.control}
           name="tutors"
           render={({ field }) => (
-            <FormItem className="col-span-4 pl-2">
-              <FormLabel>Teacher</FormLabel>
+            <FormItem className="col-span-4">
+              <FormLabel>Teacher(s)</FormLabel>
               <FormControl>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                          "w-full justify-between",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value
-                          ? dataTeachers?.find(
-                              (teacher) => teacher.id === field.value
-                            )?.name
-                          : "Select teacher"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[200px] p-0">
-                    <Command>
-                      <CommandInput placeholder="Search teacher..." />
-                      <CommandEmpty>No such teacher found.</CommandEmpty>
-                      <CommandGroup>
-                        {dataTeachers?.map((teacher) => (
-                          <CommandItem
-                            value={`${teacher.designation} - ${teacher.name}`}
-                            key={teacher.id}
-                            onSelect={() => {
-                              form.setValue("tutors", teacher.id);
-                            }}
-                          >
-                            <Check
-                              className={cn(
-                                "mr-2 h-4 w-4",
-                                teacher.id === field.value
-                                  ? "opacity-100"
-                                  : "opacity-0"
-                              )}
-                            />
-                            {`${teacher.designation} - ${teacher.name}`}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
+                <Combobox
+                  options={dataTeachers!.map((item) => ({
+                    value: item.id.toString(),
+                    label: `(${item.designation}) ${item.name}`,
+                  }))}
+                  value={field.value}
+                  onValueChange={(value) => form.setValue("tutors", value)}
+                  multiple
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -265,5 +194,5 @@ const formSchema = z
         </Button>
       </form>
     </Form>
-    );
+  );
 }

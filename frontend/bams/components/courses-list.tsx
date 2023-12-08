@@ -25,7 +25,7 @@ export type Courses = {
   name: string;
   code: string;
   description: string;
-  tutors_name: string;
+  tutor_names: string;
 }[];
 
 const columns: ColumnDef<Courses> = [
@@ -42,7 +42,7 @@ const columns: ColumnDef<Courses> = [
     header: "Description",
   },
   {
-    accessorKey: "tutors_name",
+    accessorKey: "tutor_names",
     header: "Tutor",
   },
   {

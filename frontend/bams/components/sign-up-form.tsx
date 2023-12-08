@@ -54,10 +54,11 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
+import { Combobox } from "./combobox";
 
 type backEndErrors = {
   [key: string]: string[];
-}
+};
 
 const formSchema = z
   .object({
@@ -71,7 +72,7 @@ const formSchema = z
     nationality: z.string().max(2),
     accountType: z.enum(["student", "teacher"]),
     student_id: z.string().optional(),
-    course: z.array(z.number()).optional(),
+    course: z.array(z.string()).optional(),
     designation: z.string().optional(),
   })
   .refine(
@@ -110,12 +111,16 @@ const formSchema = z
   );
 
 async function fetchCourses() {
-  const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/courses`);
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/courses`
+  );
   return data;
 }
 
 async function fetchCountries() {
-  const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/countries`);
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
+  );
   return data;
 }
 
@@ -163,7 +168,7 @@ export default function SignUpForm() {
       return axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/signup`, values);
     },
     onSuccess: (data) => {
-      console.log(data)
+      console.log(data);
       toast({
         title: "Account created.",
         description: `Successfully created account.`,
@@ -176,8 +181,8 @@ export default function SignUpForm() {
         const backendErrors = response.data;
         const frontendErrors = compileFrontendErrors(backendErrors as any);
         const errors = Object.entries(frontendErrors)
-        .map(([field, reason]) => `${field}: ${reason}`)
-        .join('\n');
+          .map(([field, reason]) => `${field}: ${reason}`)
+          .join("\n");
         console.log(errors);
         toast({
           variant: "destructive",
@@ -199,13 +204,12 @@ export default function SignUpForm() {
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
     const formattedValues = {
-        ...values,
-        courses: values.course, // Assuming the form field is named 'course'
+      ...values,
+      courses: values.course, // Assuming the form field is named 'course'
     };
     form.reset();
     mutation.mutate(formattedValues);
-};
-
+  };
 
   const accountType = form.watch("accountType");
 
@@ -438,7 +442,7 @@ export default function SignUpForm() {
             </FormItem>
           )}
         />
-        {accountType === "student" && (
+        {accountType === "student" ? (
           <>
             <FormField
               control={form.control}
@@ -463,57 +467,23 @@ export default function SignUpForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Course</FormLabel>
-                  <br />
                   <FormControl>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                          )}>
-                          {Array.isArray(field.value) && field.value.length > 0
-                            ? "Course Selected"
-                            : "Select course"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        {dataCourses!.map((course) => (
-                          <DropdownMenuCheckboxItem
-                          key={course.id}
-                          checked={Array.isArray(field.value) && field.value.includes(course.id)}
-                          onSelect={() => {
-                            const selectedCourses: number[] = Array.isArray(field.value) ? [...field.value] : [];
-                            
-                            // Ensure that course.id is defined before processing
-                            if (course.id !== undefined) {
-                                if (selectedCourses.includes(course.id)) {
-                                    const index = selectedCourses.indexOf(course.id);
-                                    selectedCourses.splice(index, 1);
-                                } else {
-                                    selectedCourses.push(course.id);
-                                }
-                            }
-                        
-                            form.setValue("course", selectedCourses as any); // Type assertion here
-                        }}
-                        >
-                          {`${course.code} - ${course.name}`}
-                        </DropdownMenuCheckboxItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                    <Combobox
+                      options={dataCourses!.map((item) => ({
+                        value: item.id.toString(),
+                        label: `${item.code} - ${item.name}`,
+                      }))}
+                      value={field.value}
+                      onValueChange={(value) => form.setValue("course", value)}
+                      multiple
+                      />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </>
-        )}
-        {accountType === "teacher" && (
+        ) : (
           <FormField
             control={form.control}
             name="designation"
