@@ -12,19 +12,19 @@ export const siteConfig = {
   mainNav: [
     {
       title: "Dashboard",
-      href: "/dashboard",
+      href: "/",
     },
   ],
   sideNav: {
     teacher: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "Manage Attendance",
-        href: "/attendance",
+        href: "/classes",
         icon: Icons.bookA,
       },
       {
@@ -34,19 +34,19 @@ export const siteConfig = {
       },
       {
         title: "Manage Students",
-        href: "/settings",
+        href: "/courses",
         icon: Icons.users,
       },
     ],
     student: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "View Attendance",
-        href: "/attendance",
+        href: "/courses",
         icon: Icons.bookA,
       },
       {
@@ -68,12 +68,12 @@ export const siteConfig = {
     admin: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "Manage Attendance",
-        href: "/attendance",
+        href: "/classes",
         icon: Icons.bookA,
       },
       {
@@ -88,7 +88,7 @@ export const siteConfig = {
       },
       {
         title: "Manage Students",
-        href: "/settings",
+        href: "/courses",
         icon: Icons.users,
       },
       {

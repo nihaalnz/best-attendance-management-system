@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { siteConfig } from "@/config/site";
 import { useSession } from "next-auth/react";
 import { Sidebar } from "./sidebar";
+import { ThemeToggle } from "./theme-toggle";
 
 export default function Nav() {
   const { data: session } = useSession();
@@ -43,7 +44,7 @@ export default function Nav() {
               <Button variant={"secondary"}>Sign In</Button>
             </Link>
           )}
-
+          <ThemeToggle />
           {siteConfig.links.map((navLink) => {
             return (
               <Link key={navLink.title} target="_blank" href={navLink.url}>

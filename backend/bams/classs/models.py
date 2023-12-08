@@ -3,7 +3,7 @@ from teacher.models import Teacher
 
 # Create your models here.
 class Class(models.Model):
-    course = models.OneToOneField('course.Course', on_delete=models.CASCADE, related_name='classes')
+    course = models.ForeignKey('course.Course', on_delete=models.CASCADE, related_name='classes')
     location = models.CharField(max_length=20)
     start_time = models.TimeField()
     end_time = models.TimeField()
