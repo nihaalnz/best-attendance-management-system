@@ -19,6 +19,7 @@ from django.db import transaction
 # Create your views here.
 class SignUpView(APIView):
     def post(self, request):
+        print(request.data)
         account_type = request.data["accountType"]
         group = Group.objects.get(name=account_type)
 
@@ -55,7 +56,7 @@ class SignUpView(APIView):
                         print(student_serializer.errors)
                         return Response(student_serializer.errors, status=400)
                 elif account_type == "teacher":
-                    teacher_data = {"user": user.id}
+                    teacher_data = {"user": user.id, "designation": request.data["designation"]}
                     teacher_serializer = TeacherSerializer(data=teacher_data)
                     if teacher_serializer.is_valid():
                         teacher_serializer.save()

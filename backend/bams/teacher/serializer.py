@@ -7,7 +7,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Teacher
-        fields = ['id', 'designation', 'name']
+        fields = '__all__'
 
     def get_name(self, obj):
         return f'{obj.user.first_name} {obj.user.last_name}'

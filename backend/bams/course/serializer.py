@@ -4,14 +4,14 @@ from teacher.serializer import TeacherSerializer  # Adjust the import based on y
 from course.models import Course
 
 class CourseSerializer(ModelSerializer):
-    tutors_name = SerializerMethodField()
+    tutor_names = SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ['id', 'name', 'code', 'description','tutors', 'tutors_name']
+        fields = '__all__'
 
-    def get_tutors_name(self, obj):
+    def get_tutor_names(self, obj):
         if obj.tutors:  # Check if tutors is not None
-            return TeacherSerializer(obj.tutors).data.get('name')
+            return ', '.join([TeacherSerializer(tutor).data.get('name') for tutor in obj.tutors.all()])
         return None
 
