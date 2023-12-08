@@ -9,6 +9,13 @@ export type Courses = {
     code: string;
 }[];
 
+export type Teachers = {
+    id: number;
+    name: string;
+    designation: string;
+}[];
+
+
 export type backEndErrors = {
     [key: string]: string[];
   };

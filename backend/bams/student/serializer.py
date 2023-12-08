@@ -9,7 +9,7 @@ from .models import Student
 class StudentSerializer(ModelSerializer):
     class Meta:
         model = Student
-        fields = ["user", "student_id", "course"]
+        fields = ['user', 'student_id', 'courses']
 
 
 class ViewStudentAttendanceSerializer(ModelSerializer):

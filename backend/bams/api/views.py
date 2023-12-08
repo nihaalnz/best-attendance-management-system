@@ -11,6 +11,7 @@ from student.serializer import (
     ViewStudentAttendanceSerializer,
 )
 from teacher.serializer import TeacherSerializer
+from teacher.models import Teacher
 from attendance.serializer import AttendanceSerializer, AttendanceSaveSerializer
 from attendance.models import Attendance
 from auth_user.models import User
@@ -20,6 +21,7 @@ from course.serializer import CourseSerializer
 from django_countries import countries
 from datetime import datetime
 from django.contrib.auth.models import Group
+from django.db import transaction
 from classs.models import Class
 from classs.serializer import ClassSerializer
 from django.shortcuts import get_object_or_404
@@ -29,6 +31,7 @@ from django.db.models import Count, Q
 # Create your views here.
 class SignUpView(APIView):
     def post(self, request):
+        print(request.data)
         account_type = request.data["accountType"]
         group = Group.objects.get(name=account_type)
 
@@ -42,45 +45,68 @@ class SignUpView(APIView):
                 {"student_id": ["Student with this student_id already exists."]},
                 status=400,
             )
-        user_serializer = UserSerializer(data=request.data)
-        if user_serializer.is_valid():
-            user = user_serializer.save()
-            user.groups.add(group)
 
-            if account_type == "student":
-                student_data = request.data | {"user": user.id}
-                student_serializer = StudentSerializer(data=student_data)
-                if student_serializer.is_valid():
-                    student_serializer.save()
-                    return Response(
-                        "Student has been succesfully registered!", status=201
-                    )
-                else:
-                    print("student error")
-                    print(student_serializer.errors)
-                    return Response(student_serializer.errors, status=400)
-            elif account_type == "teacher":
-                teacher_data = request.data | {"user": user.id}
-                teacher_serializer = TeacherSerializer(data=teacher_data)
-                if teacher_serializer.is_valid():
-                    teacher_serializer.save()
-                    return Response(
-                        "Teacher has been succesfully registered!", status=201
-                    )
-                else:
-                    print("teacher error")
-                    print(teacher_serializer.errors)
-                    return Response(teacher_serializer.errors, status=400)
+        # Extract the course IDs from the request data
+        course_ids = request.data.get("course", [])
+
+        with transaction.atomic():  # Use transaction to ensure atomicity
+            user_serializer = UserSerializer(data=request.data)
+            if user_serializer.is_valid():
+                user = user_serializer.save()
+                user.groups.add(group)
+
+                if account_type == "student":
+                    student_data = {"user": user.id, "student_id": request.data["student_id"], "courses": course_ids}
+                    student_serializer = StudentSerializer(data=student_data)
+                    if student_serializer.is_valid():
+                        student_serializer.save()
+                        return Response(
+                            "Student has been successfully registered!", status=201
+                        )
+                    else:
+                        print("student error")
+                        print(student_serializer.errors)
+                        return Response(student_serializer.errors, status=400)
+                elif account_type == "teacher":
+                    teacher_data = {"user": user.id, "designation": request.data["designation"]}
+                    teacher_serializer = TeacherSerializer(data=teacher_data)
+                    if teacher_serializer.is_valid():
+                        teacher_serializer.save()
+                        return Response(
+                            "Teacher has been successfully registered!", status=201
+                        )
+                    else:
+                        print("teacher error")
+                        print(teacher_serializer.errors)
+                        return Response(teacher_serializer.errors, status=400)
+            else:
+                print("user error")
+                print(user_serializer.errors)
+                return Response(user_serializer.errors, status=400)
+
+
+class AddCourseView(APIView):
+    def post(self, request):
+        course_serializer = CourseSerializer(data=request.data)
+
+        if course_serializer.is_valid():
+            course_serializer.save()
+            return Response("Course has been successfully added!", status=201)
         else:
-            print("user error")
-            print(user_serializer.errors)
-            return Response(user_serializer.errors, status=400)
+            return Response(course_serializer.errors, status=400)
 
 
 class CoursesView(APIView):
     def get(self, request):
         instance = Course.objects.all()
         serializer = CourseSerializer(instance, many=True)
+
+        return Response(serializer.data, status=200)
+
+class TeachersView(APIView):
+    def get(self, request):
+        instance = Teacher.objects.all()
+        serializer = TeacherSerializer(instance, many=True)
 
         return Response(serializer.data, status=200)
 

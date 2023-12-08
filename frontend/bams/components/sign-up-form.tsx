@@ -45,10 +45,20 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/components/ui/use-toast";
 import { fr } from "date-fns/locale";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Combobox } from "./combobox";
 
 type backEndErrors = {
   [key: string]: string[];
-}
+};
 
 const formSchema = z
   .object({
@@ -62,7 +72,7 @@ const formSchema = z
     nationality: z.string().max(2),
     accountType: z.enum(["student", "teacher"]),
     student_id: z.string().optional(),
-    course: z.number().optional(),
+    course: z.array(z.string()).optional(),
     designation: z.string().optional(),
   })
   .refine(
@@ -101,12 +111,16 @@ const formSchema = z
   );
 
 async function fetchCourses() {
-  const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/courses`);
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/courses`
+  );
   return data;
 }
 
 async function fetchCountries() {
-  const { data } = await axios.get(`${process.env.NEXT_PUBLIC_BASE_URL}/countries`);
+  const { data } = await axios.get(
+    `${process.env.NEXT_PUBLIC_BASE_URL}/countries`
+  );
   return data;
 }
 
@@ -143,7 +157,7 @@ export default function SignUpForm() {
       dob: new Date("2000-01-01"),
       accountType: "student",
       nationality: "",
-      course: 0,
+      course: [],
       student_id: "",
       designation: "",
     },
@@ -154,7 +168,7 @@ export default function SignUpForm() {
       return axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/signup`, values);
     },
     onSuccess: (data) => {
-      console.log(data)
+      console.log(data);
       toast({
         title: "Account created.",
         description: `Successfully created account.`,
@@ -167,8 +181,8 @@ export default function SignUpForm() {
         const backendErrors = response.data;
         const frontendErrors = compileFrontendErrors(backendErrors as any);
         const errors = Object.entries(frontendErrors)
-        .map(([field, reason]) => `${field}: ${reason}`)
-        .join('\n');
+          .map(([field, reason]) => `${field}: ${reason}`)
+          .join("\n");
         console.log(errors);
         toast({
           variant: "destructive",
@@ -188,9 +202,13 @@ export default function SignUpForm() {
     return frontendErrors;
   };
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    console.log({ values });
-    mutation.mutate(values);
+  const handleSubmit = async (values: z.infer<typeof formSchema>) => {
+    const formattedValues = {
+      ...values,
+      courses: values.course, // Assuming the form field is named 'course'
+    };
+    form.reset();
+    mutation.mutate(formattedValues);
   };
 
   const accountType = form.watch("accountType");
@@ -424,7 +442,7 @@ export default function SignUpForm() {
             </FormItem>
           )}
         />
-        {accountType === "student" && (
+        {accountType === "student" ? (
           <>
             <FormField
               control={form.control}
@@ -449,62 +467,23 @@ export default function SignUpForm() {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Course</FormLabel>
-                  <br />
                   <FormControl>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            role="combobox"
-                            className={cn(
-                              "w-full justify-between",
-                              !field.value && "text-muted-foreground"
-                            )}>
-                            {field.value
-                              ? dataCourses!.find(
-                                  (course) => course.id === field.value
-                                )?.name
-                              : "Select course"}
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-[200px] p-0">
-                        <Command>
-                          <CommandInput placeholder="Search language..." />
-                          <CommandEmpty>No such course found.</CommandEmpty>
-                          <CommandGroup>
-                            {dataCourses!.map((course) => (
-                              <CommandItem
-                                value={`${course.code} - ${course.name}`}
-                                key={course.id}
-                                onSelect={() => {
-                                  form.setValue("course", course.id);
-                                }}>
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    course.id === field.value
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  )}
-                                />
-                                {`${course.code} - ${course.name}`}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
+                    <Combobox
+                      options={dataCourses!.map((item) => ({
+                        value: item.id.toString(),
+                        label: `${item.code} - ${item.name}`,
+                      }))}
+                      value={field.value}
+                      onValueChange={(value) => form.setValue("course", value)}
+                      multiple
+                      />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </>
-        )}
-        {accountType === "teacher" && (
+        ) : (
           <FormField
             control={form.control}
             name="designation"

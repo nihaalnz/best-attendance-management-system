@@ -55,6 +55,11 @@ export const siteConfig = {
         icon: Icons.bookMarked,
       },
       {
+        title: "View Result",
+        href: "/settings",
+        icon: Icons.bookMarked,
+      },
+      {
         title: "Absentee Application",
         href: "/settings",
         icon: Icons.scrollText,
@@ -74,6 +79,11 @@ export const siteConfig = {
       {
         title: "Manage Classes",
         href: "/classes",
+        icon: Icons.bookMarked,
+      },
+      {
+        title: "Manage Courses",
+        href: "/courses",
         icon: Icons.bookMarked,
       },
       {

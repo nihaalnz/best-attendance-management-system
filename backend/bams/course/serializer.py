@@ -3,6 +3,7 @@ from course.models import Course
 
 class CourseSerializer(ModelSerializer):
     tutor_names = SerializerMethodField()
+
     class Meta:
         model = Course
         fields = '__all__'
