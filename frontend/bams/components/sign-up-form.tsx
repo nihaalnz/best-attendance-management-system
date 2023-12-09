@@ -207,7 +207,7 @@ export default function SignUpForm() {
       ...values,
       courses: values.course, // Assuming the form field is named 'course'
     };
-    form.reset();
+    // form.reset();
     mutation.mutate(formattedValues);
   };
 

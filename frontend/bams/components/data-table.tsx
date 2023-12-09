@@ -90,6 +90,13 @@ export function DataTable<TData, TValue>({
           description: error.response.data as string,
         });
       }
+      if (error?.response!.status == 500) {
+        toast({
+          variant: "destructive",
+          title: "Error!",
+          description: "Error in the server, please try again later!",
+        });
+      }
     },
   });
 

@@ -17,33 +17,48 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
-import { Loader2, Ban } from "lucide-react";
+import { Loader2, Ban, CalendarIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { Combobox } from "./combobox";
 import { Dispatch, SetStateAction } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { format } from "date-fns";
+import { ScrollArea } from "./ui/scroll-area";
+import { cn } from "@/lib/utils";
+import { Calendar } from "./ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 
 type backEndErrors = {
   [key: string]: string[];
 };
 
 const formSchema = z.object({
-  name: z.string().min(3),
-  code: z.string().min(4),
-  description: z.string().min(5),
-  tutors: z.array(z.string()).min(1),
+  location: z.string(),
+  start_time: z.string(),
+  end_time: z.string(),
+  date: z.date(),
+  tutor: z.string(),
 });
 
-async function fetchTeachers() {
+async function fetchCourseTeachers(course_id: string) {
   const { data } = await axios.get(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/teachers`
+    `${process.env.NEXT_PUBLIC_BASE_URL}/course-teachers/${course_id}`
   );
   return data;
 }
 
-export default function CourseForm({
+export default function ClassForm({
   setOpen,
+  courseId,
 }: {
   setOpen: Dispatch<SetStateAction<boolean>>;
+  courseId: string;
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -54,24 +69,25 @@ export default function CourseForm({
     isError: isErrorTeachers,
   } = useQuery<Teachers>({
     queryKey: ["teachers"],
-    queryFn: fetchTeachers,
+    queryFn:  () => fetchCourseTeachers(courseId),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     mode: "onChange",
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
-      code: "",
-      description: "",
-      tutors: [],
+      date: new Date(),
+      start_time: "09:00",
+      end_time: "10:00",
+      location: "",
+      // tutor: "",
     },
   });
 
   const mutation = useMutation({
-    mutationFn: (values: z.infer<typeof formSchema>) => {
+    mutationFn: (values) => {
       return axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/addcourse`,
+        `${process.env.NEXT_PUBLIC_BASE_URL}/add-class`,
         values
       );
     },
@@ -83,7 +99,7 @@ export default function CourseForm({
       });
       // form.reset();
       setOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["courses"] });
+      queryClient.invalidateQueries({ queryKey: ["classes"] });
     },
     onError: (error: AxiosError) => {
       const { response } = error;
@@ -114,8 +130,10 @@ export default function CourseForm({
   };
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
+    const date = format(values.date, 'yyyy-MM-dd');
     console.log(values);
-    mutation.mutate(values);
+    // @ts-ignore
+    mutation.mutate({...values, course: courseId, date});
   };
 
   if (isLoadingTeachers) {
@@ -131,7 +149,7 @@ export default function CourseForm({
       </div>
     );
   }
-  console.log(dataTeachers);
+  // console.log(dataTeachers);
   return (
     <Form {...form}>
       <form
@@ -139,12 +157,12 @@ export default function CourseForm({
         onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
           control={form.control}
-          name="name"
+          name="location"
           render={({ field }) => (
             <FormItem className="col-span-2">
-              <FormLabel>Course Name</FormLabel>
+              <FormLabel>Location</FormLabel>
               <FormControl>
-                <Input type="text" placeholder="Enter Course Name" {...field} />
+                <Input type="text" placeholder="Enter Location" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -152,12 +170,12 @@ export default function CourseForm({
         />
         <FormField
           control={form.control}
-          name="code"
+          name="start_time"
           render={({ field }) => (
-            <FormItem className="col-span-2">
-              <FormLabel>Code</FormLabel>
+            <FormItem>
+              <FormLabel>Start Time</FormLabel>
               <FormControl>
-                <Input type="text" placeholder="Enter Code" {...field} />
+                <Input type="time" placeholder="Enter Start Time" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -165,12 +183,12 @@ export default function CourseForm({
         />
         <FormField
           control={form.control}
-          name="description"
+          name="end_time"
           render={({ field }) => (
-            <FormItem className="col-span-4">
-              <FormLabel>Description</FormLabel>
+            <FormItem>
+              <FormLabel>End Time</FormLabel>
               <FormControl>
-                <Textarea placeholder="Enter Description" {...field} />
+                <Input type="time" placeholder="Enter Start Time" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -178,26 +196,71 @@ export default function CourseForm({
         />
         <FormField
           control={form.control}
-          name="tutors"
+          name="date"
           render={({ field }) => (
-            <FormItem className="col-span-4">
-              <FormLabel>Teacher(s)</FormLabel>
-              <FormControl>
-                <Combobox
-                  options={dataTeachers!.map((item) => ({
-                    value: item.id.toString(),
-                    label: `(${item.designation}) ${item.name}`,
-                  }))}
-                  value={field.value}
-                  onValueChange={(value) => form.setValue("tutors", value)}
-                  multiple
-                />
-              </FormControl>
+            <FormItem>
+              <FormLabel>Date</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}>
+                      {field.value ? (
+                        format(field.value, "PPP")
+                      ) : (
+                        <span>Pick a date</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent
+                  avoidCollisions={false}
+                  className="w-auto p-0"
+                  align="start">
+                  <ScrollArea className="h-80">
+                    <Calendar
+                      mode="single"
+                      defaultMonth={field.value}
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </ScrollArea>
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button type="submit" className="mt-6 col-span-4">
+        <FormField
+          control={form.control}
+          name="tutor"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tutor</FormLabel>
+              <Select onValueChange={field.onChange}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose Tutor" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {dataTeachers?.map((item) => (
+                    <SelectItem key={item.id} value={item.id.toString()}>{item.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <Button type="submit" className="mt-6 col-span-2">
           Create
         </Button>
       </form>
