@@ -56,7 +56,11 @@ class SignUpView(APIView):
                 user.groups.add(group)
 
                 if account_type == "student":
-                    student_data = {"user": user.id, "student_id": request.data["student_id"], "courses": course_ids}
+                    student_data = {
+                        "user": user.id,
+                        "student_id": request.data["student_id"],
+                        "courses": course_ids,
+                    }
                     student_serializer = StudentSerializer(data=student_data)
                     if student_serializer.is_valid():
                         student_serializer.save()
@@ -68,7 +72,10 @@ class SignUpView(APIView):
                         print(student_serializer.errors)
                         return Response(student_serializer.errors, status=400)
                 elif account_type == "teacher":
-                    teacher_data = {"user": user.id, "designation": request.data["designation"]}
+                    teacher_data = {
+                        "user": user.id,
+                        "designation": request.data["designation"],
+                    }
                     teacher_serializer = TeacherSerializer(data=teacher_data)
                     if teacher_serializer.is_valid():
                         teacher_serializer.save()
@@ -102,6 +109,7 @@ class CoursesView(APIView):
         serializer = CourseSerializer(instance, many=True)
 
         return Response(serializer.data, status=200)
+
 
 class TeachersView(APIView):
     def get(self, request):
@@ -161,7 +169,7 @@ class AttendanceView(APIView):
         data = request.data
         if class_.is_cancelled:
             return Response("Class is cancelled, cannot mark attendance", status=400)
-        students_in_class = Student.objects.filter(course__classes=class_)
+        students_in_class = Student.objects.filter(courses__classes=class_)
         print(students_in_class)
         for student in students_in_class:
             attendance_exist = Attendance.objects.filter(
@@ -212,7 +220,17 @@ class ClassesView(APIView):
             if request.query_params.get("course"):
                 classes = classes.filter(course=request.query_params.get("course"))
         serializer = ClassSerializer(
-            classes.order_by("-date", "-start_time", "-is_cancelled"), many=True, context={"student_id": user.student.student_id if user.groups.first().name == "student" else None}
+            classes.order_by("-date", "-start_time", "-is_cancelled"),
+            many=True,
+            context={
+                "student_id": None
+                if user.is_superuser
+                else (
+                    user.student.student_id
+                    if user.groups.first().name == "student"
+                    else None
+                )
+            },
         )
         return Response(serializer.data, status=200)
 
@@ -233,7 +251,7 @@ class UserCoursesView(APIView):
 
 class CourseStudentsAttendanceView(APIView):
     def get(self, request, course_id, format=None):
-        students = Student.objects.filter(course_id=course_id).annotate(
+        students = Student.objects.filter(courses__id=course_id).annotate(
             total_classes=Count("attendances"),
             present_classes=Count(
                 "attendances",
@@ -295,3 +313,20 @@ class UpdateCourseView(APIView):
             return Response("Course has been successfully updated!", status=200)
 
         return Response(serializer.errors, status=400)
+
+class CourseTeachersView(APIView):
+    def get(self, request, course_id):
+        course = Course.objects.get(id=course_id)
+        teachers = course.tutors.all()
+        serializer = TeacherSerializer(teachers, many=True)
+        return Response(serializer.data, status=200)
+
+class AddClassView(APIView):
+    def post(self, request):
+        class_serializer = ClassSerializer(data=request.data)
+        # print(request.data)
+        if class_serializer.is_valid():
+            class_serializer.save()
+            return Response("Class has been successfully added!", status=201)
+        else:
+            return Response(class_serializer.errors, status=400)

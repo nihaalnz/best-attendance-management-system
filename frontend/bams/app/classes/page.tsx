@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { useSearchParams } from "next/navigation";
+import AddClassDialog from "@/components/class-dialog";
 
 async function getClasses(token: string, options: any) {
   if (options) {
@@ -77,7 +78,6 @@ export default function Mark() {
   const { data, isError, isLoading, refetch } = useQuery({
     queryKey: ["classes"],
     refetchOnWindowFocus: false,
-    enabled: false,
     queryFn: async () => {
       return await getClasses(session?.data?.user.token!, { date, course });
     },
@@ -93,13 +93,15 @@ export default function Mark() {
     },
   });
 
-  useEffect(() => {
-    refetch();
-  }, []);
   if (isLoading) return <div>Loading...</div>;
   return (
     <div>
-      <h1 className="text-3xl font-bold">Classes</h1>
+      <div className="flex justify-between">
+        <h1 className="text-3xl font-bold">Classes</h1>
+        {session?.data?.user.role != "student" && courseId && (
+          <AddClassDialog courseId={courseId!} />
+        )}
+      </div>
       <div className="mt-10">
         <div className="flex rounded-lg border bg-card text-card-foreground shadow-sm p-5 gap-5 items-center justify-center">
           <div>
@@ -144,13 +146,14 @@ export default function Mark() {
           </div>
           <div>
             <Label>Choose course</Label>
-            {/* @ts-ignore */} 
-            <Select defaultValue={course && parseInt(course!)} onValueChange={setCourse}>
+            {/* @ts-ignore */}
+            <Select defaultValue={course && parseInt(course!)}
+              onValueChange={setCourse}>
               <SelectTrigger className="w-[300px]">
                 <SelectValue placeholder="Courses" />
               </SelectTrigger>
               <SelectContent>
-                {/* @ts-ignore */} 
+                {/* @ts-ignore */}
                 <SelectItem value={null}>Courses</SelectItem>
                 {courseData?.data.map((item: any) => (
                   <SelectItem key={item.id} value={item.id}>
@@ -164,7 +167,7 @@ export default function Mark() {
             Filter
           </Button>
         </div>
-        <div className="flex gap-6 mt-5">
+        <div className="flex gap-10 mt-5 flex-wrap">
           {data?.data.map((item: any) => (
             <ClassCard
               id={item.id}

@@ -48,7 +48,7 @@ export default function CourseCard({
               {courseCode}
             </span>
             <DropdownMenu>
-              <DropdownMenuTrigger>
+              <DropdownMenuTrigger className="translate-x-1/2 -translate-y-1/2">
                 <div className="px-3 hover:bg-accent py-1 rounded-md">
                   <MoreHorizontal />
                 </div>
@@ -70,7 +70,6 @@ export default function CourseCard({
                     }>
                     View Attendances
                   </DropdownMenuItem>
-                  
                 )}
                 <DropdownMenuItem disabled>---------------</DropdownMenuItem>
               </DropdownMenuContent>
