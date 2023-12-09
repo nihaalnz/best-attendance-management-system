@@ -7,6 +7,9 @@ export type Courses = {
     id: number;
     name: string;
     code: string;
+    description: string;
+    tutors:number;
+    tutors_name: string
 }[];
 
 export type Teachers = {

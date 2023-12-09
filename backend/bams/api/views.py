@@ -280,6 +280,39 @@ class StudentAttendanceCourseView(APIView):
 
         return Response(serializer.data, status=200)
 
+class UpdateCourseView(APIView):
+    def get_object(self, code):
+        return get_object_or_404(Course, code=code)
+
+    def get(self, request, code):
+        course = self.get_object(code)
+        serializer = CourseSerializer(course)
+        return Response(serializer.data)
+
+    def put(self, request, code):
+        course = self.get_object(code)
+        serializer = CourseSerializer(course, data=request.data)
+
+        if serializer.is_valid():
+            # Assuming 'tutors' is an array of teacher IDs
+            tutor_ids = request.data.get('tutors', [])
+
+            # Assuming you have a Teacher model
+            from teacher.models import Teacher
+
+            # Get the Teacher instance
+            tutor_instance = Teacher.objects.get(id=tutor_ids)
+
+            # Update the course fields
+            serializer.save()
+
+            # Update the tutor associated with the course
+            course.tutors = tutor_instance
+            course.save()
+
+            return Response("Course has been successfully updated!", status=200)
+
+        return Response(serializer.errors, status=400)
 
 class CourseTeachersView(APIView):
     def get(self, request, course_id):

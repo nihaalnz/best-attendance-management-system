@@ -19,14 +19,25 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import EditCourse from "./course-edit";
 
 export type Courses = {
   id: number;
   name: string;
   code: string;
   description: string;
-  tutor_names: string;
+  tutors_name: string;
 }[];
+
+const handleCopyCourseCode = (code) => {
+  navigator.clipboard.writeText(code)
+    .then(() => {
+      console.log("Course code copied to clipboard:", code);
+    })
+    .catch((error) => {
+      console.error("Error copying course code:", error);
+    });
+};
 
 const columns: ColumnDef<Courses> = [
   {
@@ -42,7 +53,7 @@ const columns: ColumnDef<Courses> = [
     header: "Description",
   },
   {
-    accessorKey: "tutor_names",
+    accessorKey: "tutors_name",
     header: "Tutor",
   },
   {
@@ -61,12 +72,13 @@ const columns: ColumnDef<Courses> = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => console.log("Copy course ID")}>
-              Copy course ID
+            <DropdownMenuItem onClick={() => handleCopyCourseCode(course.code)}>
+              Copy Course Code
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View tutor</DropdownMenuItem>
-            <DropdownMenuItem>View course details</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleEditCourseDetails(row.original.code)}>
+              Edit Course Details
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -79,6 +91,7 @@ export function CourseList() {
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = React.useState({});
+  const [selectedCourseCode, setSelectedCourseCode] = React.useState<string | null>(null);
 
   const [data, setData] = React.useState<Courses>([]);
 
@@ -115,6 +128,10 @@ export function CourseList() {
       rowSelection,
     },
   });
+
+  const handleEditCourseDetails = (code: string) => {
+    setSelectedCourseCode(code);
+  };
 
   return (
     <div className="w-full">
@@ -172,6 +189,26 @@ export function CourseList() {
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <span className="sr-only">Open menu</span>
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => handleCopyCourseCode(course.code)}>
+                          Copy Course Code
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleEditCourseDetails(row.original.code)}>
+                          Edit Course Details
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
@@ -207,6 +244,10 @@ export function CourseList() {
           </Button>
         </div>
       </div>
+      {/* Conditionally render the EditCourse component */}
+      {selectedCourseCode && (
+        <EditCourse courseCode={selectedCourseCode} />
+      )}
     </div>
   );
 }
