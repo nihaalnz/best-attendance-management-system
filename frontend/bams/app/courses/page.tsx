@@ -15,7 +15,7 @@ async function getUserCourses(token: string) {
       },
     }
   );
-  return data;
+  return data.data;
 }
 
 export default function Mark() {
@@ -36,7 +36,7 @@ export default function Mark() {
       </div>
       <div className="mt-10">
         <div className="flex gap-11 mt-5 flex-wrap">
-          {data?.data.map((item: any) => (
+          {data?.map((item: any) => (
             <CourseCard
               id={item.id}
               courseCode={item.code}
