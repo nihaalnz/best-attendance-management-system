@@ -41,6 +41,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Dispatch, SetStateAction, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useSession } from "next-auth/react";
 
 type backEndErrors = {
   [key: string]: string[];
@@ -70,9 +71,9 @@ interface EditClassProps {
 }
 
 export default function EditClass({ classId, setOpen }: EditClassProps) {
+  const session = useSession();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-
   const {
     data,
     isLoading,
@@ -91,7 +92,11 @@ export default function EditClass({ classId, setOpen }: EditClassProps) {
     mutationFn: (values: z.infer<typeof formSchema>) => {
       return axios.put(
         `${process.env.NEXT_PUBLIC_BASE_URL}/update-class/${classId}`,
-        values
+        values, {
+          headers: {
+            Authorization: `Token ${session?.data?.user.token!}`,
+          }
+        }
       );
     },
     onSuccess: (data) => {
@@ -149,7 +154,6 @@ export default function EditClass({ classId, setOpen }: EditClassProps) {
       </div>
     );
   }
-  console.log(data?.course_tutors);
   return (
     <Form {...form}>
       <form
