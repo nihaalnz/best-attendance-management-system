@@ -335,8 +335,10 @@ class UpdateClassView(APIView):
         return Response(serializer.data)
 
     def put(self, request, class_id):
+        user = request.user
         class_ = self.get_object(class_id)
-        request.data.update({"course": class_.course.id})
+
+        request.data.update({"course": class_.course.id, "cancelled_by": user.id if request.data.get("is_cancelled") else None})
         serializer = ClassSerializer(class_, data=request.data)
         if serializer.is_valid():
             serializer.save()
