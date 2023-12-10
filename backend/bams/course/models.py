@@ -7,5 +7,7 @@ class Course(models.Model):
     description = models.TextField()
     tutors = models.ManyToManyField('teacher.Teacher', related_name='courses')
     
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     def __str__(self):
         return self.name
