@@ -8,6 +8,7 @@ class ClassSerializer(serializers.ModelSerializer):
     course_name = serializers.SerializerMethodField()
     teacher_name = serializers.SerializerMethodField()
     attendance_status = serializers.SerializerMethodField()
+    course_tutors = serializers.SerializerMethodField()
 
     class Meta:
         model = Class
@@ -33,3 +34,9 @@ class ClassSerializer(serializers.ModelSerializer):
                 return None
         else:
             return None
+
+    def get_course_tutors(self, obj):
+        return [
+            {"id": tutor.id, "name": f"{tutor.user.first_name} {tutor.user.last_name}"}
+            for tutor in obj.course.tutors.all()
+        ]
