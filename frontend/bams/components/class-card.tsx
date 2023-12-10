@@ -11,6 +11,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal } from "lucide-react";
+import { ClassEditDialog } from "@/components/class-edit-dialog";
 
 export default function ClassCard({
   id,
@@ -40,18 +50,47 @@ export default function ClassCard({
   return (
     <Card className="p-3 flex flex-col justify-between max-w-[300px] hover:bg-gray-100 dark:hover:bg-slate-900 transition-colors">
       <CardHeader>
-        {isCancelled && <Badge className="self-start" variant={"destructive"}>Cancelled</Badge>}
-        {status && <Badge className="self-start" variant={`${status === 'Present' ? 'default': 'destructive'}`}>{status}</Badge>}
-        <CardTitle
-          className={`${
-            session?.data?.user?.role != "student" &&
-            "cursor-pointer underline decoration-4 underline-offset-8 decoration-transparent hover:decoration-blue-300 transition-all ease-in"
-          }`}
-          onClick={() => {
-            session?.data?.user?.role != "student" &&
-              router.push(`/attendance/${id}`);
-          }}>
-          {courseCode}
+        {isCancelled && (
+          <Badge className="self-start" variant={"destructive"}>
+            Cancelled
+          </Badge>
+        )}
+        {status && (
+          <Badge
+            className="self-start"
+            variant={`${status === "Present" ? "default" : "destructive"}`}>
+            {status}
+          </Badge>
+        )}
+        <CardTitle>
+          <div className="flex">
+            <span
+              className={`${
+                session?.data?.user?.role != "student" &&
+                "cursor-pointer underline decoration-4 underline-offset-8 decoration-transparent hover:decoration-blue-300 transition-all ease-in"
+              }`}
+              onClick={() => {
+                session?.data?.user?.role != "student" &&
+                  router.push(`/attendance/${id}`);
+              }}>
+              {courseCode}
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="translate-x-1/2 -translate-y-1/2">
+                <div className="px-3 hover:bg-accent py-1 rounded-md">
+                  <MoreHorizontal />
+                </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>Additional Options</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {session?.data?.user?.role != "student" && (
+                  <ClassEditDialog classId={id.toString()} />
+                )}
+                <DropdownMenuItem disabled>---------------</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </CardTitle>
         <CardDescription>{courseName}</CardDescription>
       </CardHeader>
