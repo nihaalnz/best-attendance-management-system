@@ -180,12 +180,12 @@ class AttendanceView(APIView):
                 class_attendance=class_, student=student
             )
             if attendance_exist:
-                attendance_exist.update(status=data.get(student.student_id, "absent"))
+                attendance_exist.update(status=data.get(student.student_id, "present"))
                 continue
             serializer_data = {
                 "class_attendance": class_.id,
                 "student": student.id,
-                "status": data.get(student.student_id, "absent"),
+                "status": data.get(student.student_id, "present"),
             }
             attendance_serializer = AttendanceSaveSerializer(data=serializer_data)
             if attendance_serializer.is_valid():
