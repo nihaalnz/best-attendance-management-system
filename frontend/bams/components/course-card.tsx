@@ -93,14 +93,17 @@ export default function CourseCard({
         </CardTitle>
         <CardDescription>{courseName}</CardDescription>
       </CardHeader>
-      <CardContent className="max-h-[150px] overflow-hidden overflow-ellipsis">
+      {/* <CardContent className="max-h-[150px] overflow-hidden overflow-ellipsis">
         Lorem ipsum dolor sit amet consectetur, adipisicing elit. Fugit modi
         sequi sapiente, dignissimos neque quam repellat ut non minus,
         exercitationem itaque saepe quasi voluptas minima. Amet minima neque
         facilis consequuntur!
+      </CardContent> */}
+      <CardContent className="max-h-[150px] overflow-hidden overflow-ellipsis">
+        {description}
       </CardContent>
       <CardFooter>
-        <p className="font-bold mt-4">{tutors}</p>
+        <p className="font-bold mt-4 truncate">{tutors}</p>
       </CardFooter>
     </Card>
   );

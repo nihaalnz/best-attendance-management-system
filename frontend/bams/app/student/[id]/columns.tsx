@@ -5,12 +5,18 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
 export type Attendance = {
-  student_id: string;
-  student_name: string;
+  id?: string;
+  class_attendance?: number;
+  student?: number;
+  student_id?: string;
+  student_name?: string;
   location: string;
   date: string;
   time: string;
   status: string;
+
+  created_at?: string;
+  updated_at?: string;
 };
 
 export const columns: ColumnDef<Attendance>[] = [

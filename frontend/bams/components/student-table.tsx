@@ -16,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   Table,
   TableBody,
@@ -34,17 +33,21 @@ import {
 } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { useState } from "react";
+import ExcelButton from "@/components/excel-button";
+
 
 interface DataTableProps<TData, TValue> {
+  courseCode: string;
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
 export function StudentTable<TData, TValue>({
+  courseCode,
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const [sorting, setSorting] = useState<SortingState>([])
+  const [sorting, setSorting] = useState<SortingState>([]);
   const table = useReactTable({
     data,
     columns,
@@ -54,7 +57,7 @@ export function StudentTable<TData, TValue>({
     getPaginationRowModel: getPaginationRowModel(),
     state: {
       sorting,
-    }
+    },
   });
 
   return (
@@ -170,6 +173,7 @@ export function StudentTable<TData, TValue>({
                 <StepForwardIcon className="h-4 w-4" />
               </Button>
             </div>
+              <ExcelButton table={table} filename={courseCode}>Export to Excel</ExcelButton>
           </div>
         </div>
       </div>

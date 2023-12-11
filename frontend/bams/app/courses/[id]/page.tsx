@@ -31,7 +31,7 @@ export default async function AttendanceMarkPage({
         Students {searchParams?.code && <span>in {searchParams?.code}</span>}
       </h1>
       <div className="mx-auto max-w-4xl mb-10 mt-5">
-        <StudentTable columns={columns} data={data} />
+        <StudentTable courseCode={searchParams?.code ?? ''} columns={columns} data={data} />
       </div>
     </div>
   );
