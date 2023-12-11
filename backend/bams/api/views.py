@@ -224,7 +224,7 @@ class ClassesView(APIView):
             if request.query_params.get("course"):
                 classes = classes.filter(course=request.query_params.get("course"))
         serializer = ClassSerializer(
-            classes.order_by("-date", "-start_time", "-is_cancelled"),
+            classes.order_by("-date", "-start_time", "is_cancelled"),
             many=True,
             context={
                 "student_id": None
