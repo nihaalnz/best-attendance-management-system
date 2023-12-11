@@ -84,6 +84,22 @@ export const columns: ColumnDef<Attendance>[] = [
     cell: ({ row }) => {
       return <p className="text-center">{row.getValue("date")}</p>;
     },
+    filterFn: (rows, id, filterValue) => {
+      const { from, to } = filterValue;
+      console.log(typeof from, to)
+      if (from) {
+        if (to) {
+          return rows.original.date >= from && rows.original.date <= to;
+        }
+        return rows.original.date === from;
+      }
+      // if (from && to) {
+      //   // Date range is selected
+      //   return rows.original.date >= from && rows.original.date <= to;
+      // } 
+      // No date filter
+      return true;
+    },
   },
   {
     accessorKey: "status",

@@ -1,6 +1,14 @@
 "use client";
 
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ColumnDef,
   flexRender,
   SortingState,
@@ -30,24 +38,130 @@ import {
   ChevronRightIcon,
   StepForwardIcon,
   StepBackIcon,
+  ArrowUpDown,
+  MoreHorizontal,
 } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { useState } from "react";
 import ExcelButton from "@/components/excel-button";
-
+import { useRouter } from "next/navigation";
 
 interface DataTableProps<TData, TValue> {
+  courseId: number;
   courseCode: string;
-  columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
 export function StudentTable<TData, TValue>({
+  courseId,
   courseCode,
-  columns,
   data,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const router = useRouter();
+
+  const columns: ColumnDef<TData, TValue>[] = [
+    {
+      header: ({ column }) => {
+        return <p className="text-center">No.</p>;
+      },
+      id: "id",
+      cell: ({ row, table }: { row: any; table: any }) => (
+        <p className="text-center">
+          {(table
+            .getSortedRowModel()
+            ?.flatRows?.findIndex((flatRow: any) => flatRow.id === row.id) ||
+            0) + 1}
+        </p>
+      ),
+    },
+    {
+      accessorKey: "student_id",
+      // header: "Student ID",
+      header: ({ column }) => {
+        return (
+          <div
+            className="flex gap-1 items-center justify-center cursor-pointer dark:hover:text-white hover:text-black"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }>
+            Student ID
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        return <p className="text-center">{row.getValue("student_id")}</p>;
+      },
+    },
+    {
+      accessorKey: "name",
+      header: ({ column }) => {
+        return (
+          <div
+            className="flex gap-1 items-center justify-center cursor-pointer dark:hover:text-white hover:text-black"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }>
+            Student Name
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        );
+      },
+      cell: ({ row }) => {
+        return <p className="text-center">{row.getValue("name")}</p>;
+      },
+    },
+    {
+      accessorKey: "attendance_ratio",
+      header: ({ column }) => {
+        return (
+          <div
+            className="flex gap-1 items-center justify-center cursor-pointer dark:hover:text-white hover:text-black"
+            onClick={() =>
+              column.toggleSorting(column.getIsSorted() === "asc")
+            }>
+            Attendance Ratio
+            <ArrowUpDown className="ml-2 h-4 w-4" />
+          </div>
+        );
+      },
+
+      cell: ({ row }) => {
+        return (
+          <p className="font-bold text-center">
+            {row.getValue("attendance_ratio")}
+          </p>
+        );
+      },
+    },
+    {
+      accessorKey: "actions",
+      header: "",
+      cell: ({ row }) => {
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() =>
+                  router.push(`/student/${courseId}?student_id=${row.getValue("student_id")}&code=${courseCode}`)
+                }>
+                View Student
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
   const table = useReactTable({
     data,
     columns,
@@ -173,7 +287,9 @@ export function StudentTable<TData, TValue>({
                 <StepForwardIcon className="h-4 w-4" />
               </Button>
             </div>
-              <ExcelButton table={table} filename={courseCode}>Export to Excel</ExcelButton>
+            <ExcelButton table={table} filename={courseCode}>
+              Export to Excel
+            </ExcelButton>
           </div>
         </div>
       </div>

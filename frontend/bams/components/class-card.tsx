@@ -84,6 +84,7 @@ export default function ClassCard({
               <DropdownMenuContent>
                 <DropdownMenuLabel>Additional Options</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push(`classes/${id}`)}>View Status</DropdownMenuItem>
                 {session?.data?.user?.role != "student" && (
                   <ClassEditDialog classId={id.toString()} />
                 )}

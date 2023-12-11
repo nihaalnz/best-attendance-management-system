@@ -1,13 +1,12 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
 export type Student = {
   student_id: string;
-  name: string;
-  attendanceRatio: string;
+  student_name: string;
+  status: string;
 };
 
 export const columns: ColumnDef<Student>[] = [
@@ -38,12 +37,13 @@ export const columns: ColumnDef<Student>[] = [
         </div>
       );
     },
-    cell: ({ row }) => {
+
+    cell: ({ row }: { row: any }) => {
       return <p className="text-center">{row.getValue("student_id")}</p>;
     },
   },
   {
-    accessorKey: "name",
+    accessorKey: "student_name",
     header: ({ column }) => {
       return (
         <div
@@ -54,29 +54,20 @@ export const columns: ColumnDef<Student>[] = [
         </div>
       );
     },
+
     cell: ({ row }) => {
-      return <p className="text-center">{row.getValue("name")}</p>;
+      return <p className="text-center">{row.getValue("student_name")}</p>;
     },
   },
   {
-    accessorKey: "attendance_ratio",
+    accessorKey: "status",
     header: ({ column }) => {
-      return (
-        <div
-          className="flex gap-1 items-center justify-center cursor-pointer dark:hover:text-white hover:text-black"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Attendance Ratio
-          <ArrowUpDown className="ml-2 h-4 w-4" />
-        </div>
-      );
+      return <p className="text-center">Status</p>;
     },
-
     cell: ({ row }) => {
-      return (
-        <p className="font-bold text-center">
-          {row.getValue("attendance_ratio")}
-        </p>
-      );
+      const status: string = row.getValue("status");
+      const fixedStatus: string = status.charAt(0).toUpperCase() + status.slice(1);
+      return <p className="text-center font-bold">{fixedStatus}</p>;
     },
   },
 ];

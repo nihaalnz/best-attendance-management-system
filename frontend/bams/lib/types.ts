@@ -38,3 +38,9 @@ export type Teachers = {
 export type backEndErrors = {
   [key: string]: string[];
 };
+
+export type Student = {
+  student_id: string;
+  name: string;
+  attendanceRatio: string;
+};

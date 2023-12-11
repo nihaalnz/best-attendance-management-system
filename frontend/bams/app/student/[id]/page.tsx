@@ -3,10 +3,13 @@ import { Attendance, columns } from "./columns";
 import axios from "axios";
 import { auth } from "@/auth";
 
-async function getData(courseId: number, token: string): Promise<Attendance[]> {
+async function getData(courseId: number, token: string, student_id?: string): Promise<Attendance[]> {
   const data = await axios.get(
     `${process.env.NEXT_PUBLIC_BASE_URL}/student/${courseId}/course-attendance`,
     {
+      params: {
+        student_id,
+      },
       headers: {
         Authorization: `Token ${token}`,
       },
@@ -23,7 +26,7 @@ export default async function AttendanceMarkPage({
   searchParams?: { [key: string]: string };
 }) {
   const session = await auth();
-  const data = await getData(params.id, session?.user?.token!);
+  const data = await getData(params.id, session?.user?.token!, searchParams?.student_id);
   const filteredData = data.map(
     ({
       id,
