@@ -254,14 +254,38 @@ class UserCoursesView(APIView):
 
 
 class CourseStudentsAttendanceView(APIView):
-    def get(self, request, course_id, format=None):
+    def get(self, request, course_id):
+        print(course_id)
+        if request.query_params:
+            if request.query_params.get("date[from]"):
+                from_date = datetime.strptime(
+                    request.query_params.get("date[from]"), "%Y-%m-%d"
+                )
+                to_date = None
+                if request.query_params.get("date[to]"):
+                    to_date = datetime.strptime(
+                        request.query_params.get("date[to]"), "%Y-%m-%d"
+                    )
+
+        date_filter = (
+            Q(attendances__class_attendance__date__range=[from_date, to_date])
+            if to_date
+            else Q(attendances__class_attendance__date__gte=from_date)
+        )
+        class_filter = Q(attendances__class_attendance__course__id=course_id)
+
         students = Student.objects.filter(courses__id=course_id).annotate(
-            total_classes=Count("attendances"),
+            total_classes=Count(
+                "attendances",
+                filter=class_filter & date_filter,
+            ),
             present_classes=Count(
                 "attendances",
                 filter=Q(
                     attendances__status__in=["present", "tardy"],
-                ),
+                )
+                & class_filter
+                & date_filter,
             ),
         )
 
@@ -271,14 +295,17 @@ class CourseStudentsAttendanceView(APIView):
 
 class StudentAttendanceCourseView(APIView):
     def get(self, request, course_id):
-        student = request.user
-
+        print(request.query_params)
+        user = request.user
+        filter = (
+            {"student__user": user}
+            if user.groups.first().name == "student"
+            else {"student__student_id": request.query_params.get("student_id")}
+        )
         course = Course.objects.get(id=course_id)
         classes = course.classes.all()
 
-        attendance = Attendance.objects.filter(
-            class_attendance__in=classes, student__user=student
-        )
+        attendance = Attendance.objects.filter(class_attendance__in=classes, **filter)
         # print(classes)
         serializer = AttendanceSerializer(attendance, many=True)
 
@@ -338,13 +365,19 @@ class UpdateClassView(APIView):
         user = request.user
         class_ = self.get_object(class_id)
 
-        request.data.update({"course": class_.course.id, "cancelled_by": user.id if request.data.get("is_cancelled") else None})
+        request.data.update(
+            {
+                "course": class_.course.id,
+                "cancelled_by": user.id if request.data.get("is_cancelled") else None,
+            }
+        )
         serializer = ClassSerializer(class_, data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response("Class has been successfully updated!", status=200)
 
         return Response(serializer.errors, status=400)
+
 
 class ClassView(APIView):
     def get(self, request, class_id):
