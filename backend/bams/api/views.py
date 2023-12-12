@@ -26,6 +26,15 @@ from classs.models import Class
 from classs.serializer import ClassSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from absentee.models import AbsenteeApplication
+from absentee.serializer import AbsenteeApplicationSerializer
+from course.models import Course  # Import Course model if not already imported
+from student.models import Student  # Import Student model if not already imported
+from datetime import date
 
 
 # Create your views here.
@@ -330,3 +339,58 @@ class AddClassView(APIView):
             return Response("Class has been successfully added!", status=201)
         else:
             return Response(class_serializer.errors, status=400)
+        
+
+
+
+
+class AbsenteeApplicationView(APIView):
+    def get(self, request, *args, **kwargs):
+        # Retrieve all absentee applications
+        absentee_applications = AbsenteeApplication.objects.all()
+        serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+
+        # Get distinct status options from the model
+        status_options = AbsenteeApplication._meta.get_field('status').choices
+        status_options = [status[0] for status in status_options]
+
+        return Response({
+            'absentee_applications': serializer.data,
+            'status_options': status_options,
+        }, status=200)
+
+    def post(self, request, *args, **kwargs):
+        serializer = AbsenteeApplicationSerializer(data=request.data)
+
+        if serializer.is_valid():
+            # Save the absentee application
+            absentee_application = serializer.save()
+
+            return Response(
+                AbsenteeApplicationSerializer(absentee_application).data,
+                status=201
+            )
+        else:
+            return Response(serializer.errors, status=400)
+
+        
+
+class GetStudentByEmailView(APIView):
+    def get(self, request):
+        email = request.query_params.get('email')
+
+        if not email:
+            return Response({"error": "Email parameter is required."}, status=400)
+
+        try:
+            # Assuming the email is unique in the User model
+            user = User.objects.get(email=email)
+            student = Student.objects.get(user=user)
+            serializer = StudentSerializer(student)
+            return Response(serializer.data, status=200)
+
+        except User.DoesNotExist:
+            return Response({"error": "User with the specified email does not exist."}, status=404)
+
+        except Student.DoesNotExist:
+            return Response({"error": "Student with the specified email does not exist."}, status=404)

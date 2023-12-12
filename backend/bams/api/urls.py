@@ -17,4 +17,6 @@ urlpatterns = [
     path('updatecourse/<str:code>', views.UpdateCourseView.as_view()),
     path('course-teachers/<int:course_id>', views.CourseTeachersView.as_view()),
     path('add-class', views.AddClassView.as_view()),
+    path('request-absentee', views.AbsenteeApplicationView.as_view()),
+    path('get-student-by-email/', views.GetStudentByEmailView.as_view()),
 ]
