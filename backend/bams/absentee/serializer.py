@@ -1,33 +1,40 @@
 # serializers.py
 from rest_framework import serializers
-from .models import AbsenteeApplication
+from .models import AbsenteeApplicationRequest, AbsenteeApplicationAction
 from student.models import Student  # Import Student model
 
+
 class AbsenteeApplicationSerializer(serializers.ModelSerializer):
-    student_email = serializers.EmailField(write_only=True)
+    status = serializers.SerializerMethodField()
+    tutor_name = serializers.SerializerMethodField()
+    student_name = serializers.SerializerMethodField()
+    request_reason = serializers.SerializerMethodField()
+    response_reason = serializers.SerializerMethodField()
+    date = serializers.SerializerMethodField()
 
     class Meta:
-        model = AbsenteeApplication
-        fields = '__all__'
+        model = AbsenteeApplicationRequest
+        fields = "__all__"
 
-    def validate_student_email(self, value):
-        try:
-            # Fetch the corresponding student based on the provided email
-            student = Student.objects.get(user__email=value)
-            return student
-        except Student.DoesNotExist:
-            raise serializers.ValidationError(f"No student found with email {value}")
+    def get_status(self, obj):
+        return obj.action.action
 
-    def create(self, validated_data):
-        # Remove the 'student_email' field from the validated data
-        student_email = validated_data.pop('student_email', None)
+    def get_tutor_name(self, obj):
+        return f"{obj.tutor.user.first_name} {obj.tutor.user.last_name}"
 
-        # Create the AbsenteeApplication instance
-        absentee_application = super().create(validated_data)
+    def get_student_name(self, obj):
+        return f"{obj.student.user.first_name} {obj.student.user.last_name}"
 
-        # If a student was found based on the email, associate it with the absentee application
-        if student_email:
-            absentee_application.student = student_email
-            absentee_application.save()
+    def get_request_reason(self, obj):
+        return obj.reason
+    
+    def get_response_reason(self, obj):
+        return obj.action.reason
 
-        return absentee_application
+    def get_date(self, obj):
+        return f'{obj.start_date}{f" - {obj.end_date}" if obj.end_date else ""}'
+
+class AbsenteeApplicationActionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AbsenteeApplicationAction
+        fields = "__all__"

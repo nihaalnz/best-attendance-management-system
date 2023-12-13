@@ -30,7 +30,7 @@ from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
-from absentee.models import AbsenteeApplication
+from absentee.models import AbsenteeApplicationRequest, AbsenteeApplicationAction
 from absentee.serializer import AbsenteeApplicationSerializer
 from course.models import Course  # Import Course model if not already imported
 from student.models import Student  # Import Student model if not already imported
@@ -289,6 +289,7 @@ class StudentAttendanceCourseView(APIView):
 
         return Response(serializer.data, status=200)
 
+
 class UpdateCourseView(APIView):
     def get_object(self, code):
         return get_object_or_404(Course, code=code)
@@ -304,7 +305,7 @@ class UpdateCourseView(APIView):
 
         if serializer.is_valid():
             # Assuming 'tutors' is an array of teacher IDs
-            tutor_ids = request.data.get('tutors', [])
+            tutor_ids = request.data.get("tutors", [])
 
             # Assuming you have a Teacher model
             from teacher.models import Teacher
@@ -323,12 +324,14 @@ class UpdateCourseView(APIView):
 
         return Response(serializer.errors, status=400)
 
+
 class CourseTeachersView(APIView):
     def get(self, request, course_id):
         course = Course.objects.get(id=course_id)
         teachers = course.tutors.all()
         serializer = TeacherSerializer(teachers, many=True)
         return Response(serializer.data, status=200)
+
 
 class AddClassView(APIView):
     def post(self, request):
@@ -339,58 +342,73 @@ class AddClassView(APIView):
             return Response("Class has been successfully added!", status=201)
         else:
             return Response(class_serializer.errors, status=400)
-        
-
-
 
 
 class AbsenteeApplicationView(APIView):
-    def get(self, request, *args, **kwargs):
-        # Retrieve all absentee applications
-        absentee_applications = AbsenteeApplication.objects.all()
-        serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+    def get(self, request, application_id=None, *args, **kwargs):
+        # get if student or teacher
+        if application_id:
+            absentee_application = AbsenteeApplicationRequest.objects.get(
+                id=application_id
+            )
+            return Response(
+                AbsenteeApplicationSerializer(absentee_application).data, status=200
+            )
 
-        # Get distinct status options from the model
-        status_options = AbsenteeApplication._meta.get_field('status').choices
-        status_options = [status[0] for status in status_options]
-
-        return Response({
-            'absentee_applications': serializer.data,
-            'status_options': status_options,
-        }, status=200)
+        type = (
+            "admin" if request.user.is_superuser else request.user.groups.first().name
+        )
+        if type == "student":
+            absentee_applications = request.user.student.absentee_applications.order_by('-start_date', '-action')
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        elif type == "teacher":
+            absentee_applications = request.user.teacher.absentee_applications.order_by('-start_date', '-action')
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        else:
+            absentee_applications = AbsenteeApplicationRequest.objects.all().order_by('-start_date', '-action')
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        return Response(
+            serializer.data,
+            status=200,
+        )
 
     def post(self, request, *args, **kwargs):
+        request.data.update(
+            {
+                "student": request.user.student.id,
+                "start_date": datetime.fromisoformat(
+                    request.data.get("start_date")
+                ).strftime("%Y-%m-%d"),
+                "end_date": datetime.fromisoformat(end_date).strftime("%Y-%m-%d")
+                if (end_date := request.data.get("end_date"))
+                else None,
+            }
+        )
         serializer = AbsenteeApplicationSerializer(data=request.data)
-
         if serializer.is_valid():
-            # Save the absentee application
+            # # Save the absentee application
             absentee_application = serializer.save()
 
-            return Response(
-                AbsenteeApplicationSerializer(absentee_application).data,
-                status=201
+            # # Create an absentee application action
+            absentee_application_action = AbsenteeApplicationAction(
+                application=absentee_application,
+                action="pending",
             )
-        else:
-            return Response(serializer.errors, status=400)
+            absentee_application_action.save()
 
-        
+        return Response(
+            "AbsenteeApplicationSerializer(absentee_application).data, status=201"
+        )
+        # else:
+        #     return Response(serializer.errors, status=400)
 
-class GetStudentByEmailView(APIView):
-    def get(self, request):
-        email = request.query_params.get('email')
+class AbsenteeActionView(APIView):
+    def post(self, request, application_id, *args, **kwargs):
+        application = AbsenteeApplicationRequest.objects.get(id=application_id)
+        application_action = application.action
 
-        if not email:
-            return Response({"error": "Email parameter is required."}, status=400)
+        application_action.action = request.data.get("action")
+        application_action.reason = request.data.get("reason")
+        application_action.save()
 
-        try:
-            # Assuming the email is unique in the User model
-            user = User.objects.get(email=email)
-            student = Student.objects.get(user=user)
-            serializer = StudentSerializer(student)
-            return Response(serializer.data, status=200)
-
-        except User.DoesNotExist:
-            return Response({"error": "User with the specified email does not exist."}, status=404)
-
-        except Student.DoesNotExist:
-            return Response({"error": "Student with the specified email does not exist."}, status=404)
+        return Response("Action has been successfully updated!", status=200)
