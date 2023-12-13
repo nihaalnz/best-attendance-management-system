@@ -20,4 +20,6 @@ urlpatterns = [
     path('update-class/<int:class_id>', views.UpdateClassView.as_view()),
     path('class/<int:class_id>', views.ClassView.as_view()),
     path('course/<int:course_id>', views.CoursesView.as_view()),
+    path('user-profile/', views.UserProfileView.as_view()),
+    path('update-profile/', views.UpdateProfileView.as_view()),
 ]

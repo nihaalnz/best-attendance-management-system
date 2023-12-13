@@ -384,3 +384,85 @@ class ClassView(APIView):
         class_ = Class.objects.get(id=class_id)
         serializer = ClassSerializer(class_)
         return Response(serializer.data, status=200)
+    
+class UserProfileView(APIView):
+
+    def get(self, request):
+        email = request.query_params.get("email")
+        user = get_object_or_404(User, email=email)
+        user_data = UserSerializer(user).data
+
+        student_data = {}
+        teacher_data = {}
+
+        # Check if the user is a student
+        if hasattr(user, 'student'):
+            student_data = StudentSerializer(user.student).data
+
+        # Check if the user is a teacher
+        if hasattr(user, 'teacher'):
+            teacher_data = TeacherSerializer(user.teacher).data
+
+        response_data = {
+            "user": user_data,
+            "student": student_data,
+            "teacher": teacher_data,
+        }
+
+        return Response(response_data)
+    
+class UpdateProfileView(APIView):
+    def put(self, request):
+        user_email = request.data.get("email", None)
+        
+        if not user_email:
+            return Response("Email is required for updating the profile.", status=400)
+
+        try:
+            user = User.objects.get(email=user_email)
+        except User.DoesNotExist:
+            return Response("User with the provided email does not exist.", status=404)
+
+        # Validate and process the incoming data
+        serializer = UserSerializer(instance=user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+
+            account_type = request.data.get("accountType")
+            group = Group.objects.get(name=account_type)
+
+            # Update additional user data based on account type
+            if account_type == "student":
+                student_data = {
+                    "student_id": request.data.get("student_id"),
+                    "courses": request.data.get("course", []),
+                }
+                student_serializer = StudentSerializer(
+                    instance=user.student, data=student_data, partial=True
+                )
+                if student_serializer.is_valid():
+                    student_serializer.save()
+                else:
+                    return Response(
+                        student_serializer.errors, status=400
+                    )
+            elif account_type == "teacher":
+                teacher_data = {
+                    "designation": request.data.get("designation"),
+                }
+                teacher_serializer = TeacherSerializer(
+                    instance=user.teacher, data=teacher_data, partial=True
+                )
+                if teacher_serializer.is_valid():
+                    teacher_serializer.save()
+                else:
+                    return Response(
+                        teacher_serializer.errors, status=400
+                    )
+
+            user.groups.clear()  # Remove existing groups
+            user.groups.add(group)
+
+            return Response("Profile has been successfully updated!", status=200)
+        else:
+            return Response(serializer.errors, status=400)
