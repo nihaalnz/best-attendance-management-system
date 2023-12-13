@@ -36,11 +36,11 @@ import {
 } from "@/components/ui/command";
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Loader2, Ban } from "lucide-react";
-import { format } from "date-fns";
+import { addDays, format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { useToast } from "@/components/ui/use-toast";
@@ -66,11 +66,9 @@ type backEndErrors = {
 const formSchema = z
   .object({
     start_date: z.date(),
-    end_date: z.date(),
-    reason_type: z.enum(["mitigating", "sickleave", "other"]),
+    end_date: z.date().optional(),
     reason: z.string(),
-    tutors: z.array(z.string()).min(1),
-    student:z.string(),
+    tutor: z.string(),
   })
 
 async function fetchTeachers() {
@@ -81,7 +79,7 @@ async function fetchTeachers() {
 }
 
 export default function AbsenteeApplication() {
-
+  const queryClient = useQueryClient();
   const session = useSession();
   const { toast } = useToast();
 
@@ -99,17 +97,17 @@ export default function AbsenteeApplication() {
     resolver: zodResolver(formSchema),
     defaultValues: {
       start_date: new Date(),
-      end_date: new Date(),
-      reason_type: "mitigating",
-      reason: "",
-      tutors: [],
-      student:"",
+      tutor: "",
     },
   });
 
   const mutation = useMutation({
     mutationFn: (formattedValues: z.infer<typeof formSchema>) => {
-      return axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/request-absentee`, formattedValues);
+      return axios.post(`${process.env.NEXT_PUBLIC_BASE_URL}/request-absentee`, formattedValues, {
+        headers: {
+          Authorization: `Token ${session?.data?.user.token}`,
+        }
+      });
     },
     onSuccess: (data) => {
       console.log(data);
@@ -117,7 +115,8 @@ export default function AbsenteeApplication() {
         title: "Absentee Application Submitted",
         description: `Successfully submitted application.`,
       });
-      // form.reset();
+      form.reset();
+      queryClient.invalidateQueries({queryKey: ['absentee']});
     },
     onError: (error: AxiosError) => {
       const { response } = error;
@@ -147,38 +146,8 @@ export default function AbsenteeApplication() {
   };
 
   const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-    const studentEmail = session?.data?.user?.email;
-  
-    try {
-      // Fetch student data using the student email
-      const studentResponse = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/get-student-by-email?email=${studentEmail}`
-      );
-      const studentData = studentResponse.data;
-  
-      if (!studentData) {
-        // Handle the case where the student is not found
-        console.error(`Student not found for email: ${studentEmail}`);
-        return;
-      }
-  
-      // Create a new object with formatted date strings
-      const formattedValues = {
-        ...values,
-        start_date: format(new Date(values.start_date), 'yyyy-MM-dd'),
-        end_date: format(new Date(values.end_date), 'yyyy-MM-dd'),
-        student_email: session?.data?.user?.email, 
-      };
-  
-      console.log("Formatted Values:", formattedValues);
-      console.log("User Role:", session?.data?.user?.email);
-      console.log("user:", studentData.student_id);
-  
-      mutation.mutate(formattedValues);
-    } catch (error) {
-      console.error("Error fetching student data:", error);
-      // Handle the error as needed
-    }
+    console.log(values)
+    mutation.mutate(values);
   };
 
   if (isLoadingTeachers) {
@@ -204,7 +173,7 @@ export default function AbsenteeApplication() {
           control={form.control}
           name="start_date"
           render={({ field }) => (
-            <FormItem className="col-span-2">
+            <FormItem>
               <FormLabel>Start Date</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
@@ -216,7 +185,7 @@ export default function AbsenteeApplication() {
                         !field.value && "text-muted-foreground"
                       )}>
                       {field.value ? (
-                        format(field.value, "yyyy-MM-dd")
+                        format(field.value, "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -248,7 +217,7 @@ export default function AbsenteeApplication() {
           control={form.control}
           name="end_date"
           render={({ field }) => (
-            <FormItem className="col-span-2">
+            <FormItem>
               <FormLabel>End Date</FormLabel>
               <Popover>
                 <PopoverTrigger asChild>
@@ -260,7 +229,7 @@ export default function AbsenteeApplication() {
                         !field.value && "text-muted-foreground"
                       )}>
                       {field.value ? (
-                        format(field.value, "yyyy-MM-dd")
+                        format(field.value, "PPP")
                       ) : (
                         <span>Pick a date</span>
                       )}
@@ -290,10 +259,10 @@ export default function AbsenteeApplication() {
         />
         <FormField
           control={form.control}
-          name="tutors"
+          name="tutor"
           render={({ field }) => (
             <FormItem className="col-span-2">
-              <FormLabel>Teacher(s)</FormLabel>
+              <FormLabel>Teacher</FormLabel>
               <FormControl>
                 <Combobox
                   options={dataTeachers!.map((item) => ({
@@ -301,8 +270,7 @@ export default function AbsenteeApplication() {
                     label: `(${item.designation}) ${item.name}`,
                   }))}
                   value={field.value}
-                  onValueChange={(value) => form.setValue("tutors", value)}
-                  multiple
+                  onValueChange={(value) => form.setValue("tutor", value)}
                 />
               </FormControl>
               <FormMessage />
@@ -311,43 +279,18 @@ export default function AbsenteeApplication() {
         />
         <FormField
           control={form.control}
-          name="reason_type"
+          name="reason"
           render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Reason</FormLabel>
-              <Select defaultValue="mititgating" onValueChange={field.onChange}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Reason" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="mitigating">Mitigating Circumstances</SelectItem>
-                  <SelectItem value="sickleave">Sick Leave</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="reason"
-          render={({ field }) => (
-            <FormItem className="col-span-4">
-              <FormLabel>Description</FormLabel>
               <FormControl>
-                <Textarea placeholder="Enter Description" {...field} />
+                <Textarea placeholder="Enter reason for applying" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        
-        <Button type="submit" className="mt-6 col-span-4">
+        <Button type="submit" className="mt-6 col-span-2">
           Submit
         </Button>
       </form>
