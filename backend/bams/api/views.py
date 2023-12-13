@@ -26,6 +26,15 @@ from classs.models import Class
 from classs.serializer import ClassSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from absentee.models import AbsenteeApplicationRequest, AbsenteeApplicationAction
+from absentee.serializer import AbsenteeApplicationSerializer
+from course.models import Course  # Import Course model if not already imported
+from student.models import Student  # Import Student model if not already imported
+from datetime import date
 
 
 # Create your views here.
@@ -350,6 +359,76 @@ class AddClassView(APIView):
             return Response("Class has been successfully added!", status=201)
         else:
             return Response(class_serializer.errors, status=400)
+
+
+class AbsenteeApplicationView(APIView):
+    def get(self, request, application_id=None, *args, **kwargs):
+        # get if student or teacher
+        if application_id:
+            absentee_application = AbsenteeApplicationRequest.objects.get(
+                id=application_id
+            )
+            return Response(
+                AbsenteeApplicationSerializer(absentee_application).data, status=200
+            )
+
+        type = (
+            "admin" if request.user.is_superuser else request.user.groups.first().name
+        )
+        if type == "student":
+            absentee_applications = request.user.student.absentee_applications.order_by('-start_date', '-action')
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        elif type == "teacher":
+            absentee_applications = request.user.teacher.absentee_applications.order_by('-start_date', '-action')
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        else:
+            absentee_applications = AbsenteeApplicationRequest.objects.all().order_by('-start_date', '-action')
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        return Response(
+            serializer.data,
+            status=200,
+        )
+
+    def post(self, request, *args, **kwargs):
+        request.data.update(
+            {
+                "student": request.user.student.id,
+                "start_date": datetime.fromisoformat(
+                    request.data.get("start_date")
+                ).strftime("%Y-%m-%d"),
+                "end_date": datetime.fromisoformat(end_date).strftime("%Y-%m-%d")
+                if (end_date := request.data.get("end_date"))
+                else None,
+            }
+        )
+        serializer = AbsenteeApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            # # Save the absentee application
+            absentee_application = serializer.save()
+
+            # # Create an absentee application action
+            absentee_application_action = AbsenteeApplicationAction(
+                application=absentee_application,
+                action="pending",
+            )
+            absentee_application_action.save()
+
+        return Response(
+            "AbsenteeApplicationSerializer(absentee_application).data, status=201"
+        )
+        # else:
+        #     return Response(serializer.errors, status=400)
+
+class AbsenteeActionView(APIView):
+    def post(self, request, application_id, *args, **kwargs):
+        application = AbsenteeApplicationRequest.objects.get(id=application_id)
+        application_action = application.action
+
+        application_action.action = request.data.get("action")
+        application_action.reason = request.data.get("reason")
+        application_action.save()
+
+        return Response("Action has been successfully updated!", status=200)
 
 
 class UpdateClassView(APIView):

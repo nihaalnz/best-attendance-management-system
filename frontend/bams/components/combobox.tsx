@@ -1,5 +1,3 @@
-// Other Imports Removed for Brevity
-
 import { Check, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -112,9 +110,8 @@ export const Combobox = forwardRef(
                 props.options.find((option) => option.value === props.value)
                   ?.label}
 
-              {!props.value ||
-                (props.value.length === 0 &&
-                  (props.selectPlaceholder ?? "Select an option"))}
+              {(!props.value || (props.multiple && props.value.length === 0)) &&
+                (props.selectPlaceholder ?? "Select an option")}
             </span>
             <ChevronDown
               className={cn(
