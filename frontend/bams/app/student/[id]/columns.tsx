@@ -5,12 +5,18 @@ import { ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown } from "lucide-react";
 
 export type Attendance = {
-  student_id: string;
-  student_name: string;
+  id?: string;
+  class_attendance?: number;
+  student?: number;
+  student_id?: string;
+  student_name?: string;
   location: string;
   date: string;
   time: string;
   status: string;
+
+  created_at?: string;
+  updated_at?: string;
 };
 
 export const columns: ColumnDef<Attendance>[] = [
@@ -77,6 +83,22 @@ export const columns: ColumnDef<Attendance>[] = [
 
     cell: ({ row }) => {
       return <p className="text-center">{row.getValue("date")}</p>;
+    },
+    filterFn: (rows, id, filterValue) => {
+      const { from, to } = filterValue;
+      console.log(typeof from, to)
+      if (from) {
+        if (to) {
+          return rows.original.date >= from && rows.original.date <= to;
+        }
+        return rows.original.date === from;
+      }
+      // if (from && to) {
+      //   // Date range is selected
+      //   return rows.original.date >= from && rows.original.date <= to;
+      // } 
+      // No date filter
+      return true;
     },
   },
   {

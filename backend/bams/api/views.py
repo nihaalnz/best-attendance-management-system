@@ -113,7 +113,11 @@ class AddCourseView(APIView):
 
 
 class CoursesView(APIView):
-    def get(self, request):
+    def get(self, request, course_id=None):
+        if course_id:
+            instance = Course.objects.get(id=course_id)
+            serializer = CourseSerializer(instance)
+            return Response(serializer.data, status=200)
         instance = Course.objects.all()
         serializer = CourseSerializer(instance, many=True)
 
@@ -185,12 +189,12 @@ class AttendanceView(APIView):
                 class_attendance=class_, student=student
             )
             if attendance_exist:
-                attendance_exist.update(status=data.get(student.student_id, "absent"))
+                attendance_exist.update(status=data.get(student.student_id, "present"))
                 continue
             serializer_data = {
                 "class_attendance": class_.id,
                 "student": student.id,
-                "status": data.get(student.student_id, "absent"),
+                "status": data.get(student.student_id, "present"),
             }
             attendance_serializer = AttendanceSaveSerializer(data=serializer_data)
             if attendance_serializer.is_valid():
@@ -229,7 +233,7 @@ class ClassesView(APIView):
             if request.query_params.get("course"):
                 classes = classes.filter(course=request.query_params.get("course"))
         serializer = ClassSerializer(
-            classes.order_by("-date", "-start_time", "-is_cancelled"),
+            classes.order_by("-date", "-start_time", "is_cancelled"),
             many=True,
             context={
                 "student_id": None
@@ -259,14 +263,38 @@ class UserCoursesView(APIView):
 
 
 class CourseStudentsAttendanceView(APIView):
-    def get(self, request, course_id, format=None):
+    def get(self, request, course_id):
+        print(course_id)
+        if request.query_params:
+            if request.query_params.get("date[from]"):
+                from_date = datetime.strptime(
+                    request.query_params.get("date[from]"), "%Y-%m-%d"
+                )
+                to_date = None
+                if request.query_params.get("date[to]"):
+                    to_date = datetime.strptime(
+                        request.query_params.get("date[to]"), "%Y-%m-%d"
+                    )
+
+        date_filter = (
+            Q(attendances__class_attendance__date__range=[from_date, to_date])
+            if to_date
+            else Q(attendances__class_attendance__date__gte=from_date)
+        )
+        class_filter = Q(attendances__class_attendance__course__id=course_id)
+
         students = Student.objects.filter(courses__id=course_id).annotate(
-            total_classes=Count("attendances"),
+            total_classes=Count(
+                "attendances",
+                filter=class_filter & date_filter,
+            ),
             present_classes=Count(
                 "attendances",
                 filter=Q(
                     attendances__status__in=["present", "tardy"],
-                ),
+                )
+                & class_filter
+                & date_filter,
             ),
         )
 
@@ -276,14 +304,17 @@ class CourseStudentsAttendanceView(APIView):
 
 class StudentAttendanceCourseView(APIView):
     def get(self, request, course_id):
-        student = request.user
-
+        print(request.query_params)
+        user = request.user
+        filter = (
+            {"student__user": user}
+            if user.groups.first().name == "student"
+            else {"student__student_id": request.query_params.get("student_id")}
+        )
         course = Course.objects.get(id=course_id)
         classes = course.classes.all()
 
-        attendance = Attendance.objects.filter(
-            class_attendance__in=classes, student__user=student
-        )
+        attendance = Attendance.objects.filter(class_attendance__in=classes, **filter)
         # print(classes)
         serializer = AttendanceSerializer(attendance, many=True)
 
@@ -291,34 +322,20 @@ class StudentAttendanceCourseView(APIView):
 
 
 class UpdateCourseView(APIView):
-    def get_object(self, code):
-        return get_object_or_404(Course, code=code)
+    def get_object(self, id):
+        return get_object_or_404(Course, id=id)
 
     def get(self, request, code):
         course = self.get_object(code)
         serializer = CourseSerializer(course)
         return Response(serializer.data)
 
-    def put(self, request, code):
-        course = self.get_object(code)
+    def put(self, request, course_id):
+        course = self.get_object(course_id)
         serializer = CourseSerializer(course, data=request.data)
 
         if serializer.is_valid():
-            # Assuming 'tutors' is an array of teacher IDs
-            tutor_ids = request.data.get("tutors", [])
-
-            # Assuming you have a Teacher model
-            from teacher.models import Teacher
-
-            # Get the Teacher instance
-            tutor_instance = Teacher.objects.get(id=tutor_ids)
-
-            # Update the course fields
             serializer.save()
-
-            # Update the tutor associated with the course
-            course.tutors = tutor_instance
-            course.save()
 
             return Response("Course has been successfully updated!", status=200)
 
@@ -412,3 +429,37 @@ class AbsenteeActionView(APIView):
         application_action.save()
 
         return Response("Action has been successfully updated!", status=200)
+
+
+class UpdateClassView(APIView):
+    def get_object(self, id):
+        return get_object_or_404(Class, id=id)
+
+    def get(self, request, id):
+        class_ = self.get_object(id)
+        serializer = ClassSerializer(class_)
+        return Response(serializer.data)
+
+    def put(self, request, class_id):
+        user = request.user
+        class_ = self.get_object(class_id)
+
+        request.data.update(
+            {
+                "course": class_.course.id,
+                "cancelled_by": user.id if request.data.get("is_cancelled") else None,
+            }
+        )
+        serializer = ClassSerializer(class_, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response("Class has been successfully updated!", status=200)
+
+        return Response(serializer.errors, status=400)
+
+
+class ClassView(APIView):
+    def get(self, request, class_id):
+        class_ = Class.objects.get(id=class_id)
+        serializer = ClassSerializer(class_)
+        return Response(serializer.data, status=200)

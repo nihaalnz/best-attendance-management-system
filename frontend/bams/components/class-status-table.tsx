@@ -4,8 +4,6 @@ import {
   ColumnDef,
   flexRender,
   SortingState,
-  ColumnFiltersState,
-  getFilteredRowModel,
   getCoreRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -18,7 +16,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   Table,
   TableBody,
@@ -33,119 +30,38 @@ import {
   ChevronRightIcon,
   StepForwardIcon,
   StepBackIcon,
-  CalendarIcon,
 } from "lucide-react";
 import { ScrollArea } from "./ui/scroll-area";
 import { useState } from "react";
 import ExcelButton from "@/components/excel-button";
-import { Input } from "./ui/input";
-import { Label } from "./ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { addDays, format, subDays } from "date-fns";
-import { Calendar } from "./ui/calendar";
-import { cn } from "@/lib/utils";
-import { DateRange } from "react-day-picker";
+
 
 interface DataTableProps<TData, TValue> {
-  courseCode: string;
+  classId: string;
   columns: ColumnDef<TData, TValue>[];
   data: TData[];
 }
 
-export function ClassTable<TData, TValue>({
-  courseCode,
+export function ClassStatusTable<TData, TValue>({
+  classId,
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [date, setDate] = useState<DateRange | undefined>({
-    from: subDays(new Date(), 3),
-    to: addDays(new Date(), 20),
-  });
-
   const table = useReactTable({
     data,
     columns,
     onSortingChange: setSorting,
-    onColumnFiltersChange: setColumnFilters,
-    getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     state: {
       sorting,
-      columnFilters,
     },
   });
-  const column = table.getColumn("date")!;
-  const handleDateRangeChange = (date: DateRange | undefined) => {
-    setDate(date);
 
-    if (date?.from && date?.to) {
-      const fromDateString = date.from.toISOString();
-      const toDateString = date.to.toISOString();
-      column.setFilterValue({
-        from: fromDateString,
-        to: toDateString,
-      });
-    }
-
-    if (!date?.from && !date?.to) {
-      column.setFilterValue("");
-    }
-
-    if (date?.from && !date?.to) {
-      const fromDateString = date.from.toISOString();
-
-      column.setFilterValue({
-        from: fromDateString,
-        to: undefined,
-      });
-    }
-  };
   return (
     <div>
-      <div>
-        <div className={cn("grid gap-2")}>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                id="date"
-                variant={"outline"}
-                className={cn(
-                  "w-[300px] justify-start text-left font-normal my-3",
-                  !date && "text-muted-foreground"
-                )}>
-                <CalendarIcon className="mr-2 h-4 w-4" />
-                {date?.from ? (
-                  date.to ? (
-                    <>
-                      {format(date.from, "LLL dd, y", {})} -{" "}
-                      {format(date.to, "LLL dd, y")}
-                    </>
-                  ) : (
-                    format(date.from, "LLL dd, y")
-                  )
-                ) : (
-                  <span>Filter by date</span>
-                )}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                initialFocus
-                mode="range"
-                defaultMonth={date?.from}
-                selected={date}
-                onSelect={handleDateRangeChange}
-                numberOfMonths={3}
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-      </div>
-
       <div className="rounded-md border">
         <ScrollArea className="h-[500px]">
           <Table>
@@ -257,9 +173,7 @@ export function ClassTable<TData, TValue>({
                 <StepForwardIcon className="h-4 w-4" />
               </Button>
             </div>
-            <ExcelButton table={table} filename={courseCode}>
-              Export to Excel
-            </ExcelButton>
+              <ExcelButton table={table} filename={`class-${classId}`}>Export to Excel</ExcelButton>
           </div>
         </div>
       </div>

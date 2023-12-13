@@ -12,6 +12,8 @@ class Class(models.Model):
     cancelled_by = models.ForeignKey('auth_user.User', on_delete=models.SET_NULL, null=True, related_name='cancelled_classes', blank=True)
     tutor = models.ForeignKey(Teacher, on_delete=models.SET_NULL, null=True, blank=True, related_name='classes')
 
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     class Meta:
         verbose_name = 'Class'
         verbose_name_plural = 'Classes'

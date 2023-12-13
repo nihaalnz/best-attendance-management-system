@@ -1,6 +1,6 @@
 "use client";
 
-import { Teachers } from "@/lib/types";
+import { Class } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,23 +14,34 @@ import { Input } from "@/components/ui/input";
 import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import axios, { AxiosError } from "axios";
-import { Loader2, Ban, CalendarIcon } from "lucide-react";
-import { useToast } from "@/components/ui/use-toast";
-import { Dispatch, SetStateAction } from "react";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { format } from "date-fns";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { cn } from "@/lib/utils";
-import { Calendar } from "@/components/ui/calendar";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
+} from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import {
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
+import axios, { AxiosError } from "axios";
+import { Loader2, Ban } from "lucide-react";
+import { format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { useToast } from "@/components/ui/use-toast";
+import { Dispatch, SetStateAction, useEffect } from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useSession } from "next-auth/react";
 
 type backEndErrors = {
   [key: string]: string[];
@@ -42,62 +53,61 @@ const formSchema = z.object({
   end_time: z.string(),
   date: z.date(),
   tutor: z.string(),
+  is_cancelled: z.boolean(),
 });
 
-async function fetchCourseTeachers(course_id: string) {
+
+async function fetchClass(classId: string): Promise<Class> {
+  // console.log("fetching", courseId)
   const { data } = await axios.get(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/course-teachers/${course_id}`
+    `${process.env.NEXT_PUBLIC_BASE_URL}/class/${classId}`
   );
   return data;
 }
 
-export default function ClassForm({
-  setOpen,
-  courseId,
-}: {
+interface EditClassProps {
+  classId: string;
   setOpen: Dispatch<SetStateAction<boolean>>;
-  courseId: string;
-}) {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+}
 
+export default function EditClass({ classId, setOpen }: EditClassProps) {
+  const session = useSession();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const {
-    data: dataTeachers,
-    isLoading: isLoadingTeachers,
-    isError: isErrorTeachers,
-  } = useQuery<Teachers>({
-    queryKey: ["teachers"],
-    queryFn: () => fetchCourseTeachers(courseId),
+    data,
+    isLoading,
+    isError,
+  } = useQuery<Class, Error>({
+    queryKey: ["class", classId],
+    queryFn: async () => await fetchClass(classId),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
     mode: "onChange",
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      date: new Date(),
-      start_time: "09:00",
-      end_time: "10:00",
-      location: "",
-      // tutor: "",
-    },
   });
 
   const mutation = useMutation({
-    mutationFn: (values) => {
-      return axios.post(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/add-class`,
-        values
+    mutationFn: (values: z.infer<typeof formSchema>) => {
+      return axios.put(
+        `${process.env.NEXT_PUBLIC_BASE_URL}/update-class/${classId}`,
+        values, {
+          headers: {
+            Authorization: `Token ${session?.data?.user.token!}`,
+          }
+        }
       );
     },
     onSuccess: (data) => {
       console.log(data);
       toast({
-        title: "Course created.",
-        description: `Successfully created course.`,
+        title: "Class updated!",
+        description: `Successfully updated class.`,
       });
-      // form.reset();
-      setOpen(false);
       queryClient.invalidateQueries({ queryKey: ["classes"] });
+      setOpen(false);
+      queryClient.invalidateQueries({ queryKey: ["class", classId] });
     },
     onError: (error: AxiosError) => {
       const { response } = error;
@@ -107,12 +117,11 @@ export default function ClassForm({
         const errors = Object.entries(frontendErrors)
           .map(([field, reason]) => `${field}: ${reason}`)
           .join("\n");
-        console.log("World Hello");
         console.log(errors);
         toast({
           variant: "destructive",
-          title: "Course creation failed.",
-          description: `Failed to create course. ${errors}`,
+          title: "Class updating failed.",
+          description: `Failed to update class. ${errors}`,
         });
       }
     },
@@ -128,19 +137,13 @@ export default function ClassForm({
   };
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    const date = format(values.date, "yyyy-MM-dd");
     console.log(values);
-    // @ts-ignore
-    mutation.mutate({ ...values, course: courseId, date });
+    mutation.mutate({...values, date: format(values.date, "yyyy-MM-dd") as unknown as Date});
   };
 
-  if (isLoadingTeachers) {
-    return (
-      <div className="flex flex-col gap-2 justify-center items-center">
-        <Loader2 height="100px" width="100px" className="animate-spin" />
-      </div>
-    );
-  } else if (isErrorTeachers) {
+  if (isLoading) {
+    return <Loader2 height="100px" width="100px" className="animate-spin" />;
+  } else if (isError) {
     return (
       <div className="flex flex-col gap-2 justify-center items-center">
         <Ban color="#ff0000" height="100px" width="100px" />
@@ -151,15 +154,15 @@ export default function ClassForm({
       </div>
     );
   }
-  // console.log(dataTeachers);
   return (
     <Form {...form}>
       <form
-        className="grid grid-cols-2 gap-x-4 gap-y-3 text-left items-center mx-auto"
+        className="grid grid-cols-2 gap-x-4 gap-y-3 text-left items-center"
         onSubmit={form.handleSubmit(handleSubmit)}>
         <FormField
           control={form.control}
           name="location"
+          defaultValue={data?.location}
           render={({ field }) => (
             <FormItem className="col-span-2">
               <FormLabel>Location</FormLabel>
@@ -173,6 +176,7 @@ export default function ClassForm({
         <FormField
           control={form.control}
           name="start_time"
+          defaultValue={data?.start_time}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Start Time</FormLabel>
@@ -186,6 +190,7 @@ export default function ClassForm({
         <FormField
           control={form.control}
           name="end_time"
+          defaultValue={data?.end_time}
           render={({ field }) => (
             <FormItem>
               <FormLabel>End Time</FormLabel>
@@ -199,6 +204,7 @@ export default function ClassForm({
         <FormField
           control={form.control}
           name="date"
+          defaultValue={new Date(data?.date!)}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Date</FormLabel>
@@ -243,17 +249,20 @@ export default function ClassForm({
         <FormField
           control={form.control}
           name="tutor"
+          defaultValue={data?.tutor.toString()}
           render={({ field }) => (
             <FormItem>
               <FormLabel>Tutor</FormLabel>
-              <Select onValueChange={field.onChange}>
+              <Select
+                defaultValue={data?.tutor.toString()}
+                onValueChange={field.onChange}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Choose Tutor" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {dataTeachers?.map((item) => (
+                  {data?.course_tutors?.map((item) => (
                     <SelectItem key={item.id} value={item.id.toString()}>
                       {item.name}
                     </SelectItem>
@@ -264,8 +273,26 @@ export default function ClassForm({
             </FormItem>
           )}
         />
+        <FormField
+          control={form.control}
+          name="is_cancelled"
+          defaultValue={data?.is_cancelled}
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="mr-2">Cancel Class?</FormLabel>
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <Button type="submit" className="mt-6 col-span-2">
-          Create
+          Update
         </Button>
       </form>
     </Form>

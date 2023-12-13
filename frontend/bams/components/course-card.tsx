@@ -21,6 +21,17 @@ import { MoreHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import { useSession } from "next-auth/react";
+import EditCourseDialog from "./class-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
+import EditCourse from "./course-edit";
+import { CourseEditDialog } from "./course-edit-dialog";
 
 export default function CourseCard({
   id,
@@ -57,12 +68,16 @@ export default function CourseCard({
                 <DropdownMenuLabel>Additional Options</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 {session?.data?.user?.role != "student" ? (
-                  <DropdownMenuItem
-                    onClick={() =>
-                      router.push(`/courses/${id}?code=${courseCode}`)
-                    }>
-                    View Students
-                  </DropdownMenuItem>
+                  <>
+                    <CourseEditDialog courseId={id.toString()} />
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() =>
+                        router.push(`/courses/${id}?code=${courseCode}`)
+                      }>
+                      View Students
+                    </DropdownMenuItem>
+                  </>
                 ) : (
                   <DropdownMenuItem
                     onClick={() =>
@@ -78,14 +93,17 @@ export default function CourseCard({
         </CardTitle>
         <CardDescription>{courseName}</CardDescription>
       </CardHeader>
-      <CardContent className="max-h-[150px] overflow-hidden overflow-ellipsis">
+      {/* <CardContent className="max-h-[150px] overflow-hidden overflow-ellipsis">
         Lorem ipsum dolor sit amet consectetur, adipisicing elit. Fugit modi
         sequi sapiente, dignissimos neque quam repellat ut non minus,
         exercitationem itaque saepe quasi voluptas minima. Amet minima neque
         facilis consequuntur!
+      </CardContent> */}
+      <CardContent className="max-h-[150px] overflow-hidden overflow-ellipsis">
+        {description}
       </CardContent>
       <CardFooter>
-        <p className="font-bold mt-4">{tutors}</p>
+        <p className="font-bold mt-4 truncate">{tutors}</p>
       </CardFooter>
     </Card>
   );

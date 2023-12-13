@@ -3,10 +3,13 @@ import { Attendance, columns } from "./columns";
 import axios from "axios";
 import { auth } from "@/auth";
 
-async function getData(courseId: number, token: string): Promise<Attendance[]> {
+async function getData(courseId: number, token: string, student_id?: string): Promise<Attendance[]> {
   const data = await axios.get(
     `${process.env.NEXT_PUBLIC_BASE_URL}/student/${courseId}/course-attendance`,
     {
+      params: {
+        student_id,
+      },
       headers: {
         Authorization: `Token ${token}`,
       },
@@ -23,7 +26,19 @@ export default async function AttendanceMarkPage({
   searchParams?: { [key: string]: string };
 }) {
   const session = await auth();
-  const data = await getData(params.id, session?.user?.token!);
+  const data = await getData(params.id, session?.user?.token!, searchParams?.student_id);
+  const filteredData = data.map(
+    ({
+      id,
+      student_id,
+      student_name,
+      created_at,
+      updated_at,
+      class_attendance,
+      student,
+      ...rest
+    }) => rest
+  );
 
   return (
     <div className="container mx-auto max-w-4xl mb-10">
@@ -31,7 +46,11 @@ export default async function AttendanceMarkPage({
         Attendance {searchParams?.code && <span>for {searchParams?.code}</span>}
       </h1>
       <div className="mx-auto max-w-4xl mb-10 mt-5">
-        <ClassTable columns={columns} data={data} />
+        <ClassTable
+          courseCode={searchParams?.code ?? ""}
+          columns={columns}
+          data={filteredData}
+        />
       </div>
     </div>
   );
