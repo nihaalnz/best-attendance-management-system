@@ -23,4 +23,6 @@ urlpatterns = [
     path('update-class/<int:class_id>', views.UpdateClassView.as_view()),
     path('class/<int:class_id>', views.ClassView.as_view()),
     path('course/<int:course_id>', views.CoursesView.as_view()),
+    path('analytics/teacher', views.TeacherAnalyticsView.as_view()),
+    path('analytics/student', views.StudentAnalyticsView.as_view()),
 ]
