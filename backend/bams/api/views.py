@@ -90,6 +90,9 @@ class SignUpView(APIView):
                 print("user error")
                 print(user_serializer.errors)
                 return Response(user_serializer.errors, status=400)
+            
+
+
 
 
 class AddCourseView(APIView):
@@ -395,10 +398,9 @@ class ClassView(APIView):
 class UserProfileView(APIView):
 
     def get(self, request):
-        email = request.query_params.get("email")
-        user = get_object_or_404(User, email=email)
-        user_data = UserSerializer(user).data
+        user = request.user
 
+        user_data = UserSerializer(user).data
         student_data = {}
         teacher_data = {}
 
@@ -418,59 +420,28 @@ class UserProfileView(APIView):
 
         return Response(response_data)
     
-class UpdateProfileView(APIView):
-    def put(self, request):
-        user_email = request.data.get("email", None)
-        
-        if not user_email:
-            return Response("Email is required for updating the profile.", status=400)
+    def put(self,request):
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
 
-        try:
-            user = User.objects.get(email=user_email)
-        except User.DoesNotExist:
-            return Response("User with the provided email does not exist.", status=404)
-
-        # Validate and process the incoming data
-        serializer = UserSerializer(instance=user, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
 
-            account_type = request.data.get("accountType")
-            group = Group.objects.get(name=account_type)
-
-            # Update additional user data based on account type
-            if account_type == "student":
-                student_data = {
-                    "student_id": request.data.get("student_id"),
-                    "courses": request.data.get("course", []),
-                }
-                student_serializer = StudentSerializer(
-                    instance=user.student, data=student_data, partial=True
-                )
+            if hasattr(user, 'student'):
+                student_serializer = StudentSerializer(user.student, data=request.data, partial=True)
                 if student_serializer.is_valid():
                     student_serializer.save()
                 else:
-                    return Response(
-                        student_serializer.errors, status=400
-                    )
-            elif account_type == "teacher":
-                teacher_data = {
-                    "designation": request.data.get("designation"),
-                }
-                teacher_serializer = TeacherSerializer(
-                    instance=user.teacher, data=teacher_data, partial=True
-                )
+                    return Response(student_serializer.errors, status=400)
+
+            if hasattr(user, 'teacher'):
+                teacher_serializer = TeacherSerializer(user.teacher, data=request.data, partial=True)
                 if teacher_serializer.is_valid():
                     teacher_serializer.save()
                 else:
-                    return Response(
-                        teacher_serializer.errors, status=400
-                    )
+                    return Response(teacher_serializer.errors, status=400)
 
-            user.groups.clear()  # Remove existing groups
-            user.groups.add(group)
-
-            return Response("Profile has been successfully updated!", status=200)
+            return Response(serializer.data, status=200)
         else:
             return Response(serializer.errors, status=400)
         
@@ -496,35 +467,30 @@ class TeacherCoursesListView(APIView):
         return Response(serializer.data, status=200)
         
 class EnrollStudentsView(APIView):
-    @staticmethod
-    def put(request):
-        try:
-            # Get the list of student IDs and course IDs from the request
-            student_ids = request.data.get('students', [])
-            course_ids = request.data.get('courses', [])
+    def put(self, request):
+        # Extract data from the request
+        student_ids = request.data.get('students', [])
+        course_ids = request.data.get('course', [])
 
-            # Validate input data (you may want to add more validation)
-            if not student_ids or not course_ids:
-                raise ValueError("Invalid input data")
+        # Validate that students and courses are not empty
+        if not student_ids or not course_ids:
+            return Response({'detail': 'Please provide at least one student and one course.'}, status=400)
 
-            # Use transaction to ensure atomicity
-            with transaction.atomic():
-                # Update the courses for the selected students in the database
-                students = Student.objects.filter(id__in=student_ids)
-                courses = Course.objects.filter(id__in=course_ids)
+        # Get the authenticated user
 
-                for student in students:
-                    student.courses.set(courses)
+        # Iterate through each student ID
+        for student_id in student_ids:
+            # Get the student object for the given student ID
+            student_obj = get_object_or_404(Student, student_id=student_id)
 
-                # Serialize the updated students and courses for response
-                serialized_students = StudentSerializer(students, many=True).data
-                serialized_courses = CourseSerializer(courses, many=True).data
+            # Iterate through each course ID
+            for course_id in course_ids:
+                # Get the course object for the given course ID
+                course_obj = get_object_or_404(Course, id=course_id)
 
-                return Response({
-                    "message": "Students enrolled successfully",
-                    "students": serialized_students,
-                    "courses": serialized_courses
-                }, status=200)
+                # Check if the course is already associated with the student
+                if course_obj not in student_obj.courses.all():
+                    # Add the course to the student's courses
+                    student_obj.courses.add(course_obj)
 
-        except Exception as e:
-            return Response({"error": str(e)}, status=400)
+        return Response({'detail': 'Students enrolled successfully'}, status=200)

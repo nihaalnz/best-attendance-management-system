@@ -3,6 +3,24 @@ export type Countries = {
   name: string;
 }[];
 
+export type Users = {
+  users:{
+  first_name: string;
+  last_name: string;
+  email: string;
+  dob: Date;
+  phone: string;
+  nationality: string;
+  }[];
+  students:{
+  student_id:string;
+  courses:number[];
+  }[];
+  teachers:{
+  designation:string;
+  }
+}[];
+
 export type Course = {
   id: number;
   name: string;

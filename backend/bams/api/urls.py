@@ -22,7 +22,6 @@ urlpatterns = [
     path('class/<int:class_id>', views.ClassView.as_view()),
     path('course/<int:course_id>', views.CoursesView.as_view()),
     path('user-profile/', views.UserProfileView.as_view()),
-    path('update-profile/', views.UpdateProfileView.as_view()),
     path('teacher/courses/', views.TeacherCoursesListView.as_view()),
     path('enrol-student', views.EnrollStudentsView.as_view()),
 ]

@@ -1,7 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
-import { Countries, Courses } from "@/lib/types";
+import { Countries, Courses, Users } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -56,32 +55,14 @@ import {
     DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Combobox } from "./combobox";
-
-// ... (other imports)
+import { useSession } from "next-auth/react";
+import { Textarea } from "./ui/textarea";
 
 type backEndErrors = {
     [key: string]: string[];
 };
 
-const formSchema = z.object({
-    email: z.string().email().optional(),
-    first_name: z.string().optional(),
-    last_name: z.string().optional(),
-    phone: z.string().min(13).max(13).optional(),
-    dob: z.date().optional(),
-    nationality: z.string().max(2).optional(),
-    accountType: z.enum(["student", "teacher"]),
-    student_id: z.string().optional().optional(),
-    courses: z.array(z.string()).optional().optional(),
-    designation: z.string().optional().optional(),
-});
 
-async function fetchUserProfile(email?: string | null) {
-    const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/user-profile?email=${email}`
-    );
-    return data;
-}
 
 async function fetchCourses() {
     const { data } = await axios.get(
@@ -97,9 +78,36 @@ async function fetchCountries() {
     return data;
 }
 
-export default function EditProfileForm() {
+
+export default function EditForm() {
+
+    const formSchema = z
+        .object({
+            email: z.string().email().optional(),
+            first_name: z.string().optional(),
+            last_name: z.string().optional(),
+            phone: z.string().min(13).max(13).optional(),
+            dob: z.date().optional(),
+            nationality: z.string().max(2).optional(),
+            accountType: z.enum(["student", "teacher"]),
+            student_id: z.string().optional().optional(),
+            course: z.string().optional(),
+            designation: z.string().optional(),
+        });
     const { toast } = useToast();
     const session = useSession();
+
+    const fetchUsers = async () => {
+        const { data } = await axios.get(
+            `${process.env.NEXT_PUBLIC_BASE_URL}/user-profile`,
+            {
+                headers: {
+                    Authorization: `Token ${session?.data?.user.token!}`,
+                },
+            }
+        );
+        return data;
+    };
 
     const {
         data: dataCourses,
@@ -117,37 +125,39 @@ export default function EditProfileForm() {
         queryKey: ["countries"],
         queryFn: fetchCountries,
     });
-
-
     const {
-        data: userProfileData,
-        isLoading: isUserProfileLoading,
-        isError: isUserProfileError,
+        data: dataUsers,
+        isLoading: isLoadinUsers,
+        isError: isErrorUsers,
     } = useQuery({
-        queryKey: ["user-profile", session?.data?.user.email],
-        queryFn: () => fetchUserProfile(session?.data?.user.email),
-        enabled: !!session, // Only fetch data if the session is available
+        queryKey: ["user-profile"],
+        queryFn: fetchUsers,
     });
-
-
-
+    // console.log(dataCountries)
     const form = useForm<z.infer<typeof formSchema>>({
         mode: "onChange",
         resolver: zodResolver(formSchema),
     });
 
-
+    console.log("UserData:", dataUsers);
     const mutation = useMutation({
         mutationFn: (values: z.infer<typeof formSchema>) => {
-            const email = session?.data?.user.email;
-            return axios.put(`${process.env.NEXT_PUBLIC_BASE_URL}/update-profile?email=${email}`, values);
+            return axios.put(
+                `${process.env.NEXT_PUBLIC_BASE_URL}/user-profile/`,
+                values, {
+                headers: {
+                    Authorization: `Token ${session?.data?.user.token!}`,
+                }
+            }
+            );
         },
         onSuccess: (data) => {
             console.log(data);
             toast({
-                title: "Profile updated.",
-                description: `Successfully updated profile.`,
+                title: "Account updated.",
+                description: `Successfully updated account.`,
             });
+            // form.reset();
         },
         onError: (error: AxiosError) => {
             const { response } = error;
@@ -160,13 +170,12 @@ export default function EditProfileForm() {
                 console.log(errors);
                 toast({
                     variant: "destructive",
-                    title: "Profile update failed.",
-                    description: `Failed to update profile. ${errors}`,
+                    title: "Account updation failed.",
+                    description: `Failed to update account. ${errors}`,
                 });
             }
         },
     });
-
     const compileFrontendErrors = (backendErrors: backEndErrors) => {
         let frontendErrors = {};
         for (const field in backendErrors) {
@@ -177,48 +186,43 @@ export default function EditProfileForm() {
         return frontendErrors;
     };
 
-    const handleSubmit = async (values: z.infer<typeof formSchema>) => {
-        const formattedValues = {
-            ...values,
-            courses: values.courses,
-            accountType: session?.data?.user.role as "student" | "teacher",
-        };
-
-        console.log("Form Submitted with values:", formattedValues);
-
-        // mutation.mutate(formattedValues);
+    const handleSubmit = (values: z.infer<typeof formSchema>) => {
+        // form.reset();
+        mutation.mutate(values);
     };
 
 
-    if (isUserProfileLoading && isLoadinCountries && isLoadingCourse) {
+
+    if (isLoadinCountries || isLoadingCourse || isLoadinUsers) {
         return <Loader2 height="100px" width="100px" className="animate-spin" />;
-    } else if (isUserProfileError || isErrorCountries || isErrorCourse) {
+    } else if (isErrorCourse || isErrorCountries || isErrorUsers) {
         return (
             <div className="flex flex-col gap-2 justify-center items-center">
                 <Ban color="#ff0000" height="100px" width="100px" />
-                <h1>We are unable to fetch your profile. Please try again later.</h1>
+                <h1>
+                    We are unable to process your request due to some error, please try
+                    again later
+                </h1>
             </div>
         );
     }
-
 
     return (
         <Form {...form}>
             <form
                 className="grid grid-cols-2 gap-x-12 gap-y-3 text-left"
-                onSubmit={form.handleSubmit(handleSubmit)}
-            >
+                onSubmit={form.handleSubmit(handleSubmit)}>
                 <FormField
                     control={form.control}
                     name="email"
-                    defaultValue={userProfileData?.user?.email}
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Email Address</FormLabel>
                             <FormControl>
                                 <Input
                                     type="text"
-                                    value={field.value !== undefined ? field.value : userProfileData?.user?.email || ""}
+                                    placeholder="gavin.belson@hooli.com"
+                                    value={field.value !== undefined ? field.value : dataUsers?.user?.email || ""}
                                     onChange={(e) => field.onChange(e.target.value)}
                                 />
                             </FormControl>
@@ -234,7 +238,7 @@ export default function EditProfileForm() {
                             <FormLabel>Contact Number</FormLabel>
                             <FormControl>
                                 <Input type="phone" placeholder="+971501087623"
-                                    value={field.value !== undefined ? field.value : userProfileData?.user?.phone || ""}
+                                    value={field.value !== undefined ? field.value : dataUsers?.user?.phone || ""}
                                     onChange={(e) => field.onChange(e.target.value)} />
                             </FormControl>
                             <FormMessage />
@@ -249,7 +253,7 @@ export default function EditProfileForm() {
                             <FormLabel>First Name</FormLabel>
                             <FormControl>
                                 <Input type="text" placeholder="Gavin"
-                                    value={field.value !== undefined ? field.value : userProfileData?.user?.first_name || ""}
+                                    value={field.value !== undefined ? field.value : dataUsers?.user?.first_name || ""}
                                     onChange={(e) => field.onChange(e.target.value)} />
                             </FormControl>
                             <FormMessage />
@@ -264,7 +268,7 @@ export default function EditProfileForm() {
                             <FormLabel>Last Name</FormLabel>
                             <FormControl>
                                 <Input type="text" placeholder="Belson"
-                                    value={field.value !== undefined ? field.value : userProfileData?.user?.last_name || ""}
+                                    value={field.value !== undefined ? field.value : dataUsers?.user?.last_name || ""}
                                     onChange={(e) => field.onChange(e.target.value)} />
                             </FormControl>
                             <FormMessage />
@@ -290,8 +294,8 @@ export default function EditProfileForm() {
                                             {
                                                 field.value !== undefined
                                                     ? format(new Date(field.value), "PPP")
-                                                    : userProfileData?.user?.dob
-                                                        ? format(new Date(userProfileData?.user?.dob), "PPP")
+                                                    : dataUsers?.user?.dob
+                                                        ? format(new Date(dataUsers?.user?.dob), "PPP")
                                                         : <span>Pick a date</span>
                                             }
                                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
@@ -309,7 +313,6 @@ export default function EditProfileForm() {
                                             defaultMonth={field.value}
                                             selected={field.value}
                                             onSelect={field.onChange}
-                                            disabled={(date) => date > new Date()}
                                             initialFocus
                                         />
                                     </ScrollArea>
@@ -340,7 +343,7 @@ export default function EditProfileForm() {
                                                 {
                                                     field.value !== undefined
                                                         ? dataCountries?.find((country) => country.code === field.value)?.name
-                                                        : dataCountries?.find((country) => country.code === userProfileData?.user?.nationality)?.name || "Select country"
+                                                        : dataCountries?.find((country) => country.code === dataUsers?.user?.nationality)?.name || "Select country"
                                                 }
                                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
@@ -385,6 +388,8 @@ export default function EditProfileForm() {
                         </FormItem>
                     )}
                 />
+
+
                 {session?.data?.user.role === "student" ? (
                     <>
                         <FormField
@@ -397,7 +402,7 @@ export default function EditProfileForm() {
                                         <Input
                                             type="text"
                                             placeholder="Enter Student ID"
-                                            value={field.value !== undefined ? field.value : userProfileData?.student?.student_id || ""}
+                                            value={field.value !== undefined ? field.value : dataUsers?.student?.student_id || ""}
                                             onChange={(e) => field.onChange(e.target.value)}
                                         />
                                     </FormControl>
@@ -407,28 +412,20 @@ export default function EditProfileForm() {
                         />
                         <FormField
                             control={form.control}
-                            name="courses"
-                            defaultValue={userProfileData?.student?.courses}
+                            name="course"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Course</FormLabel>
+                                    <FormLabel>My Courses</FormLabel>
                                     <FormControl>
-                                        <Combobox
-                                            options={dataCourses?.map((item) => ({
-                                                value: item.id.toString(),
-                                                label: `${item.code} - ${item.name}`,
-                                            })) || []}
-                                            value={field.value}
-                                            onValueChange={(value) => form.setValue("courses", value)}
-                                            multiple
-                                        />
+                                        <Textarea placeholder="Enter Description" defaultValue={dataUsers?.student?.course_names} disabled />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
+                            defaultValue={dataUsers?.student.course_names}
                         />
                     </>
-                ) : (
+                ) : session?.data?.user.role === "teacher" ? (
                     <FormField
                         control={form.control}
                         name="designation"
@@ -436,20 +433,24 @@ export default function EditProfileForm() {
                             <FormItem>
                                 <FormLabel>Designation</FormLabel>
                                 <FormControl>
-                                    <Input
-                                        type="text"
-                                        placeholder="CEO at Hooli"
-                                        value={field.value !== undefined ? field.value : userProfileData?.teacher?.designation || ""}
+                                    <Input type="text" placeholder="CEO at Hooli"
+                                        value={field.value !== undefined ? field.value : dataUsers?.teacher?.designation || ""}
                                         onChange={(e) => field.onChange(e.target.value)} />
                                 </FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
                     />
-                )}
-
-                <Button type="submit" className="mt-6 col-span-2">
-                    Update Profile
+                ) : (
+                    <></>
+                )
+                }
+                <Button
+                    type="button"  // Set the type to "button" to prevent form submission
+                    className="mt-6 col-span-2"
+                    onClick={() => handleSubmit(form.getValues())}
+                >
+                    Update
                 </Button>
             </form>
         </Form>
