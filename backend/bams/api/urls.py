@@ -10,6 +10,7 @@ urlpatterns = [
     path('teachers',views.TeachersView.as_view()),
     path('addcourse',views.AddCourseView.as_view()),   
     path('students/<int:class_id>', views.StudentView.as_view()),
+    path('students-list', views.StudentListView.as_view()),
     path('course/<int:course_id>/students-attendance', views.CourseStudentsAttendanceView.as_view()),
     path('student/<int:course_id>/course-attendance', views.StudentAttendanceCourseView.as_view()),
     path('attendance/<int:class_id>', views.AttendanceView.as_view()),
@@ -22,4 +23,6 @@ urlpatterns = [
     path('course/<int:course_id>', views.CoursesView.as_view()),
     path('user-profile/', views.UserProfileView.as_view()),
     path('update-profile/', views.UpdateProfileView.as_view()),
+    path('teacher/courses/', views.TeacherCoursesListView.as_view()),
+    path('enrol-student', views.EnrollStudentsView.as_view()),
 ]

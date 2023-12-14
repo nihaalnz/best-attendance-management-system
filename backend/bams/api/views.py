@@ -160,6 +160,13 @@ class StudentView(APIView):
         student_serializer = ViewStudentSerializer(students, many=True)
         return Response(student_serializer.data, status=200)
 
+class StudentListView(APIView):
+    def get(self, request):
+        instance = Student.objects.all()
+        serializer = StudentSerializer(instance, many=True)
+
+        return Response(serializer.data, status=200)
+
 
 class AttendanceView(APIView):
     # permission_classes = [IsAuthenticated]
@@ -466,3 +473,58 @@ class UpdateProfileView(APIView):
             return Response("Profile has been successfully updated!", status=200)
         else:
             return Response(serializer.errors, status=400)
+        
+class TeacherCoursesListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Retrieve the authenticated user
+        user = self.request.user
+
+        if user.is_superuser:
+            # If the user is a superuser, return all courses
+            courses = Course.objects.all()
+        else:
+            try:
+                # Try to get the associated teacher using the authenticated user
+                teacher = Teacher.objects.get(user=user)
+                courses = teacher.courses.all()
+            except Teacher.DoesNotExist:
+                return Response({'detail': 'Teacher not found'}, status=404)
+
+        serializer = CourseSerializer(courses, many=True)
+        return Response(serializer.data, status=200)
+        
+class EnrollStudentsView(APIView):
+    @staticmethod
+    def put(request):
+        try:
+            # Get the list of student IDs and course IDs from the request
+            student_ids = request.data.get('students', [])
+            course_ids = request.data.get('courses', [])
+
+            # Validate input data (you may want to add more validation)
+            if not student_ids or not course_ids:
+                raise ValueError("Invalid input data")
+
+            # Use transaction to ensure atomicity
+            with transaction.atomic():
+                # Update the courses for the selected students in the database
+                students = Student.objects.filter(id__in=student_ids)
+                courses = Course.objects.filter(id__in=course_ids)
+
+                for student in students:
+                    student.courses.set(courses)
+
+                # Serialize the updated students and courses for response
+                serialized_students = StudentSerializer(students, many=True).data
+                serialized_courses = CourseSerializer(courses, many=True).data
+
+                return Response({
+                    "message": "Students enrolled successfully",
+                    "students": serialized_students,
+                    "courses": serialized_courses
+                }, status=200)
+
+        except Exception as e:
+            return Response({"error": str(e)}, status=400)

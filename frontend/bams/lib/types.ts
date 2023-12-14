@@ -43,4 +43,12 @@ export type Student = {
   student_id: string;
   name: string;
   attendanceRatio: string;
-};
+}
+
+export type StudentList ={
+  student_id: string;
+  name: string;
+  courses:number[];
+  course_name:string;
+  user:number;
+}[];
