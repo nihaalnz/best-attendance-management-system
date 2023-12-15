@@ -8,7 +8,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { Card } from "./ui/card";
+import { Card, CardTitle } from "./ui/card";
 import { format } from "date-fns";
 
 function ChartTooltip({
@@ -43,7 +43,7 @@ function ChartTooltip({
 export function TeacherCharts({ data }: { data: any }) {
   return (
     <Card className="p-6">
-      <p className="text-xl my-3">Attendance status from previous classes</p>
+      <CardTitle className="ml-10 mb-10">Attendance Stats</CardTitle>
       <ResponsiveContainer width="100%" height={350}>
         <LineChart width={500} height={300} data={data}>
           <CartesianGrid strokeDasharray="3 3" />
