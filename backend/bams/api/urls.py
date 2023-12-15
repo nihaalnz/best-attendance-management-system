@@ -25,4 +25,5 @@ urlpatterns = [
     path('course/<int:course_id>', views.CoursesView.as_view()),
     path('analytics/teacher', views.TeacherAnalyticsView.as_view()),
     path('analytics/student', views.StudentAnalyticsView.as_view()),
+    path('generate-report/<int:course_id>', views.GenerateReportView.as_view()),
 ]

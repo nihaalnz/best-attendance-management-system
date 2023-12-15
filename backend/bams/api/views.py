@@ -543,3 +543,45 @@ class StudentAnalyticsView(APIView):
         
         result = [{"date": date, **data} for date, data in attendance_data.items()]        # print(classes)
         return Response(result, status=200)
+
+class GenerateReportView(APIView):
+    
+    def get(self, request, course_id, *args, **kwargs):
+        course = Course.objects.get(id=course_id)
+        classes = Class.objects.filter(course=course)
+
+        if request.query_params:
+            if request.query_params.get("from"):
+                from_date = datetime.strptime(
+                    request.query_params.get("from"), "%Y-%m-%d"
+                )
+                # print(from_date)
+                classes = classes.filter(date__gte=from_date)
+                if request.query_params.get("to"):
+                    to_date = datetime.strptime(
+                        request.query_params.get("to"), "%Y-%m-%d"
+                    )
+                    classes = classes.filter(date__lte=to_date)
+
+        students = course.students.all()
+
+        summary_data = []
+        for student in students:
+            student_info = {
+                'name': f'{student.user.first_name} {student.user.last_name}',
+                'student_id': student.student_id
+            }
+
+            for klass in classes:
+                date_str = klass.date.strftime('%Y-%m-%d')
+
+                try:
+                    attendance = Attendance.objects.get(class_attendance=klass, student=student)
+                    student_info[date_str] = "P" if attendance.status == "present" else "A" if attendance.status == "absent" else "T"
+                except Attendance.DoesNotExist:
+                    student_info[date_str] = 'Not marked'
+                except:
+                    pass
+            summary_data.append(student_info)
+
+        return Response(summary_data, status=200)
