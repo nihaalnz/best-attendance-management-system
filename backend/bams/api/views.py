@@ -26,6 +26,15 @@ from classs.models import Class
 from classs.serializer import ClassSerializer
 from django.shortcuts import get_object_or_404
 from django.db.models import Count, Q
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from absentee.models import AbsenteeApplicationRequest, AbsenteeApplicationAction
+from absentee.serializer import AbsenteeApplicationSerializer
+from course.models import Course  # Import Course model if not already imported
+from student.models import Student  # Import Student model if not already imported
+from collections import defaultdict
 
 
 # Create your views here.
@@ -149,7 +158,7 @@ class LoginView(APIView):
             )
             token, _ = Token.objects.get_or_create(user=user)
             return Response(
-                {"token": token.key, "email": user.email, "role": role}, status=200
+                {"token": token.key, "email": user.email, "role": role, "name": f'{user.first_name} {user.last_name}'}, status=200
             )
         else:
             return Response({"detail": ["Invalid credentials"]}, status=401)
@@ -362,6 +371,83 @@ class AddClassView(APIView):
             return Response(class_serializer.errors, status=400)
 
 
+class AbsenteeApplicationView(APIView):
+    def get(self, request, application_id=None, *args, **kwargs):
+        # get if student or teacher
+        if application_id:
+            absentee_application = AbsenteeApplicationRequest.objects.get(
+                id=application_id
+            )
+            return Response(
+                AbsenteeApplicationSerializer(absentee_application).data, status=200
+            )
+
+        type = (
+            "admin" if request.user.is_superuser else request.user.groups.first().name
+        )
+        if type == "student":
+            absentee_applications = request.user.student.absentee_applications.order_by(
+                "-start_date", "-action"
+            )
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        elif type == "teacher":
+            absentee_applications = request.user.teacher.absentee_applications.order_by(
+                "-start_date", "-action"
+            )
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        else:
+            absentee_applications = AbsenteeApplicationRequest.objects.all().order_by(
+                "-start_date", "-action"
+            )
+            serializer = AbsenteeApplicationSerializer(absentee_applications, many=True)
+        return Response(
+            serializer.data,
+            status=200,
+        )
+
+    def post(self, request, *args, **kwargs):
+        request.data.update(
+            {
+                "student": request.user.student.id,
+                "start_date": datetime.fromisoformat(
+                    request.data.get("start_date")
+                ).strftime("%Y-%m-%d"),
+                "end_date": datetime.fromisoformat(end_date).strftime("%Y-%m-%d")
+                if (end_date := request.data.get("end_date"))
+                else None,
+            }
+        )
+        serializer = AbsenteeApplicationSerializer(data=request.data)
+        if serializer.is_valid():
+            # # Save the absentee application
+            absentee_application = serializer.save()
+
+            # # Create an absentee application action
+            absentee_application_action = AbsenteeApplicationAction(
+                application=absentee_application,
+                action="pending",
+            )
+            absentee_application_action.save()
+
+        return Response(
+            "AbsenteeApplicationSerializer(absentee_application).data, status=201"
+        )
+        # else:
+        #     return Response(serializer.errors, status=400)
+
+
+class AbsenteeActionView(APIView):
+    def post(self, request, application_id, *args, **kwargs):
+        application = AbsenteeApplicationRequest.objects.get(id=application_id)
+        application_action = application.action
+
+        application_action.action = request.data.get("action")
+        application_action.reason = request.data.get("reason")
+        application_action.save()
+
+        return Response("Action has been successfully updated!", status=200)
+
+
 class UpdateClassView(APIView):
     def get_object(self, id):
         return get_object_or_404(Class, id=id)
@@ -394,7 +480,8 @@ class ClassView(APIView):
         class_ = Class.objects.get(id=class_id)
         serializer = ClassSerializer(class_)
         return Response(serializer.data, status=200)
-    
+
+
 class UserProfileView(APIView):
 
     def get(self, request):
@@ -494,3 +581,119 @@ class EnrollStudentsView(APIView):
                     student_obj.courses.add(course_obj)
 
         return Response({'detail': 'Students enrolled successfully'}, status=200)
+
+
+class TeacherAnalyticsView(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        if user.is_superuser:
+            classes = Class.objects.all()
+        else:
+            classes = Class.objects.filter(tutor__user=user)
+
+        attendance_data = []
+        for klass in classes:
+            date_str = klass.date.strftime("%Y-%m-%d")
+
+            # Check if a dictionary with the same date already exists
+            existing_entry = next(
+                (entry for entry in attendance_data if entry["date"] == date_str), None
+            )
+
+            if existing_entry:
+                # Update the existing dictionary
+                existing_entry["present"] += Attendance.objects.filter(
+                    status="present", class_attendance=klass
+                ).count()
+                existing_entry["absent"] += Attendance.objects.filter(
+                    status="absent", class_attendance=klass
+                ).count()
+                existing_entry["tardy"] += Attendance.objects.filter(
+                    status="tardy", class_attendance=klass
+                ).count()
+            else:
+                # Add a new dictionary to the list
+                attendance_data.append(
+                    {
+                        "date": date_str,
+                        "present": Attendance.objects.filter(
+                            status="present", class_attendance=klass
+                        ).count(),
+                        "absent": Attendance.objects.filter(
+                            status="absent", class_attendance=klass
+                        ).count(),
+                        "tardy": Attendance.objects.filter(
+                            status="tardy", class_attendance=klass
+                        ).count(),
+                    }
+                )
+        return Response(attendance_data, status=200)
+
+
+class StudentAnalyticsView(APIView):
+    def get(self, request, *args, **kwargs):
+        user = request.user
+
+        classes = Class.objects.filter(course__students=user.student)
+        attendance_data = defaultdict(dict)
+
+        for klass in classes:
+            date_str = klass.date.strftime('%Y-%m-%d')
+
+            # Check if a dictionary with the same date already exists
+            existing_entry = attendance_data.get(date_str)
+            try:
+                if existing_entry is not None:
+                    # Dictionary with the same date exists; update it with the new course data
+                    existing_entry[klass.course.code] = 3 if Attendance.objects.get(class_attendance=klass, student=user.student).status == "present" else (1 if Attendance.objects.get(class_attendance=klass, student=user.student).status == "absent" else 2)
+                else:
+                    # Create a new dictionary for the date
+                    attendance_data[date_str] = {klass.course.code: 3 if Attendance.objects.get(class_attendance=klass, student=user.student).status == "present" else (1 if Attendance.objects.get(class_attendance=klass, student=user.student).status == "absent" else 2)}
+            except:
+                pass
+        
+        result = [{"date": date, **data} for date, data in attendance_data.items()]        # print(classes)
+        return Response(result, status=200)
+
+class GenerateReportView(APIView):
+    
+    def get(self, request, course_id, *args, **kwargs):
+        course = Course.objects.get(id=course_id)
+        classes = Class.objects.filter(course=course)
+
+        if request.query_params:
+            if request.query_params.get("from"):
+                from_date = datetime.strptime(
+                    request.query_params.get("from"), "%Y-%m-%d"
+                )
+                # print(from_date)
+                classes = classes.filter(date__gte=from_date)
+                if request.query_params.get("to"):
+                    to_date = datetime.strptime(
+                        request.query_params.get("to"), "%Y-%m-%d"
+                    )
+                    classes = classes.filter(date__lte=to_date)
+
+        students = course.students.all()
+
+        summary_data = []
+        for student in students:
+            student_info = {
+                'name': f'{student.user.first_name} {student.user.last_name}',
+                'student_id': student.student_id
+            }
+
+            for klass in classes:
+                date_str = klass.date.strftime('%Y-%m-%d')
+
+                try:
+                    attendance = Attendance.objects.get(class_attendance=klass, student=student)
+                    student_info[date_str] = "P" if attendance.status == "present" else "A" if attendance.status == "absent" else "T"
+                except Attendance.DoesNotExist:
+                    student_info[date_str] = 'Not marked'
+                except:
+                    pass
+            summary_data.append(student_info)
+
+        return Response(summary_data, status=200)
+      

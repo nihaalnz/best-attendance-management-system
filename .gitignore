@@ -194,3 +194,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Dump data including personal information
+dump.json

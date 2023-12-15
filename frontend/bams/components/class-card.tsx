@@ -63,7 +63,7 @@ export default function ClassCard({
           </Badge>
         )}
         <CardTitle>
-          <div className="flex">
+          <div className="flex justify-between">
             <span
               className={`${
                 session?.data?.user?.role != "student" &&

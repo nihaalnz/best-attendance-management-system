@@ -111,6 +111,7 @@ export function DataTable<TData, TValue>({
         `${process.env.NEXT_PUBLIC_BASE_URL}/attendance/${classId}`
       );
     },
+    refetchOnWindowFocus: false,
   });
   useEffect(() => {
     if (isSuccess) {
