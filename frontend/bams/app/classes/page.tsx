@@ -26,6 +26,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { useSearchParams } from "next/navigation";
 import AddClassDialog from "@/components/class-dialog";
+import { ExportCourseData } from "@/components/course-export-button";
 
 async function getClasses(token: string, options: any) {
   if (options) {
@@ -166,6 +167,7 @@ export default function Mark() {
           <Button className="self-end" onClick={() => refetch()}>
             Filter
           </Button>
+          {course && <ExportCourseData date={date} courseCode={courseData?.data.find((val: any) => val.id === course )?.code} courseId={course} />}
         </div>
         <div className="flex gap-10 mt-5 flex-wrap">
           {data?.data.map((item: any) => (
