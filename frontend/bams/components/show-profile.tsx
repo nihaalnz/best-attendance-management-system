@@ -119,7 +119,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Email Address</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{dataUsers?.user?.email}</p>
+                        <p className="text-base text-gray-400 py-2">{dataUsers?.user?.email}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -132,7 +132,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Contact Number</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{dataUsers?.user?.phone}</p>
+                        <p className="text-base text-gray-400 py-2">{dataUsers?.user?.phone}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -145,7 +145,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">First Name</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{dataUsers?.user?.first_name}</p>
+                        <p className="text-base text-gray-400 py-2">{dataUsers?.user?.first_name}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -158,7 +158,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Last Name</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{dataUsers?.user?.last_name}</p>
+                        <p className="text-base text-gray-400 py-2">{dataUsers?.user?.last_name}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -171,7 +171,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Date of Birth</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{format(
+                        <p className="text-base text-gray-400 py-2">{format(
                             new Date(dataUsers?.user?.dob),
                             "PPP"
                           )}
@@ -188,7 +188,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Nationality</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{dataCountries?.find((country) => country.code === dataUsers?.user?.nationality)?.name}
+                        <p className="text-base text-gray-400 py-2">{dataCountries?.find((country) => country.code === dataUsers?.user?.nationality)?.name}
                         </p>
                       </FormControl>
                       <FormMessage />
@@ -204,7 +204,7 @@ export default function ShowProfileCard() {
                         <FormItem>
                           <FormLabel className="text-xl">Student ID</FormLabel>
                           <FormControl>
-                            <p className="text-base py-2" >{dataUsers?.student?.student_id}
+                            <p className="text-base text-gray-400 py-2" >{dataUsers?.student?.student_id}
                             </p>
                           </FormControl>
                           <FormMessage />
@@ -218,7 +218,7 @@ export default function ShowProfileCard() {
                         <FormItem>
                           <FormLabel className="text-xl">Course</FormLabel>
                           <FormControl>
-                          <p className="text-base py-2" >{dataUsers?.student?.course_names}
+                          <p className="text-base text-gray-400 py-2" >{dataUsers?.student?.course_names}
                             </p>
                           </FormControl>
                           <FormMessage />
@@ -234,7 +234,7 @@ export default function ShowProfileCard() {
                       <FormItem>
                         <FormLabel className="text-xl">Designation</FormLabel>
                         <FormControl>
-                            <p className="text-base py-2">
+                            <p className="text-base text-gray-400 py-2">
                           {dataUsers?.teacher?.designation}
                           </p>
                         </FormControl>
