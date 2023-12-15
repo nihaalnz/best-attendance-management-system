@@ -99,6 +99,9 @@ class SignUpView(APIView):
                 print("user error")
                 print(user_serializer.errors)
                 return Response(user_serializer.errors, status=400)
+            
+
+
 
 
 class AddCourseView(APIView):
@@ -168,6 +171,13 @@ class StudentView(APIView):
         students = course.students.all()
         student_serializer = ViewStudentSerializer(students, many=True)
         return Response(student_serializer.data, status=200)
+
+class StudentListView(APIView):
+    def get(self, request):
+        instance = Student.objects.all()
+        serializer = StudentSerializer(instance, many=True)
+
+        return Response(serializer.data, status=200)
 
 
 class AttendanceView(APIView):
@@ -472,6 +482,107 @@ class ClassView(APIView):
         return Response(serializer.data, status=200)
 
 
+class UserProfileView(APIView):
+
+    def get(self, request):
+        user = request.user
+
+        user_data = UserSerializer(user).data
+        student_data = {}
+        teacher_data = {}
+
+        # Check if the user is a student
+        if hasattr(user, 'student'):
+            student_data = StudentSerializer(user.student).data
+
+        # Check if the user is a teacher
+        if hasattr(user, 'teacher'):
+            teacher_data = TeacherSerializer(user.teacher).data
+
+        response_data = {
+            "user": user_data,
+            "student": student_data,
+            "teacher": teacher_data,
+        }
+
+        return Response(response_data)
+    
+    def put(self,request):
+        user = request.user
+        serializer = UserSerializer(user, data=request.data, partial=True)
+
+        if serializer.is_valid():
+            serializer.save()
+
+            if hasattr(user, 'student'):
+                student_serializer = StudentSerializer(user.student, data=request.data, partial=True)
+                if student_serializer.is_valid():
+                    student_serializer.save()
+                else:
+                    return Response(student_serializer.errors, status=400)
+
+            if hasattr(user, 'teacher'):
+                teacher_serializer = TeacherSerializer(user.teacher, data=request.data, partial=True)
+                if teacher_serializer.is_valid():
+                    teacher_serializer.save()
+                else:
+                    return Response(teacher_serializer.errors, status=400)
+
+            return Response(serializer.data, status=200)
+        else:
+            return Response(serializer.errors, status=400)
+        
+class TeacherCoursesListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, *args, **kwargs):
+        # Retrieve the authenticated user
+        user = self.request.user
+
+        if user.is_superuser:
+            # If the user is a superuser, return all courses
+            courses = Course.objects.all()
+        else:
+            try:
+                # Try to get the associated teacher using the authenticated user
+                teacher = Teacher.objects.get(user=user)
+                courses = teacher.courses.all()
+            except Teacher.DoesNotExist:
+                return Response({'detail': 'Teacher not found'}, status=404)
+
+        serializer = CourseSerializer(courses, many=True)
+        return Response(serializer.data, status=200)
+        
+class EnrollStudentsView(APIView):
+    def put(self, request):
+        # Extract data from the request
+        student_ids = request.data.get('students', [])
+        course_ids = request.data.get('course', [])
+
+        # Validate that students and courses are not empty
+        if not student_ids or not course_ids:
+            return Response({'detail': 'Please provide at least one student and one course.'}, status=400)
+
+        # Get the authenticated user
+
+        # Iterate through each student ID
+        for student_id in student_ids:
+            # Get the student object for the given student ID
+            student_obj = get_object_or_404(Student, student_id=student_id)
+
+            # Iterate through each course ID
+            for course_id in course_ids:
+                # Get the course object for the given course ID
+                course_obj = get_object_or_404(Course, id=course_id)
+
+                # Check if the course is already associated with the student
+                if course_obj not in student_obj.courses.all():
+                    # Add the course to the student's courses
+                    student_obj.courses.add(course_obj)
+
+        return Response({'detail': 'Students enrolled successfully'}, status=200)
+
+
 class TeacherAnalyticsView(APIView):
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -585,3 +696,4 @@ class GenerateReportView(APIView):
             summary_data.append(student_info)
 
         return Response(summary_data, status=200)
+      

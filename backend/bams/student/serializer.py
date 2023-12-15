@@ -7,9 +7,16 @@ from .models import Student
 
 
 class StudentSerializer(ModelSerializer):
+    name = SerializerMethodField()
+    course_names = SerializerMethodField()
     class Meta:
         model = Student
-        fields = ['user', 'student_id', 'courses']
+        fields = ['user', 'student_id', 'courses', 'course_names','name']
+
+    def get_course_names(self, obj):
+        return ', '.join([course.name for course in obj.courses.all()])
+    def get_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
 
 
 class ViewStudentAttendanceSerializer(ModelSerializer):

@@ -37,6 +37,11 @@ export const siteConfig = {
         href: "/courses",
         icon: Icons.users,
       },
+      {
+        title: "Absentee Requests",
+        href: "/absentee",
+        icon: Icons.scrollText,
+      },
     ],
     student: [
       {
@@ -61,7 +66,7 @@ export const siteConfig = {
       },
       {
         title: "Absentee Application",
-        href: "/settings",
+        href: "/absentee",
         icon: Icons.scrollText,
       },
     ],
@@ -93,12 +98,12 @@ export const siteConfig = {
       },
       {
         title: "Manage Teachers",
-        href: "/settings",
+        href: "/signup",
         icon: Icons.users,
       },
       {
         title: "Enroll Students",
-        href: "/settings",
+        href: "/signup",
         icon: Icons.graduationCap,
       },
     ],
