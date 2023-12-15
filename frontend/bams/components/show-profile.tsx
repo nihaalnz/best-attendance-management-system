@@ -35,12 +35,7 @@ import { format } from "date-fns";
 import { useForm } from "react-hook-form";
 import { Countries, Courses } from "@/lib/types";
 
-async function fetchUserProfile(email?: string | null) {
-    const { data } = await axios.get(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/user-profile?email=${email}`
-    );
-    return data;
-}
+
 
 async function fetchCourses() {
     const { data } = await axios.get(
@@ -59,16 +54,27 @@ async function fetchCountries() {
 export default function ShowProfileCard() {
     const session = useSession();
     const form = useForm();
+
+    const fetchUsers = async () => {
+      const { data } = await axios.get(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/user-profile`,
+          {
+              headers: {
+                  Authorization: `Token ${session?.data?.user.token!}`,
+              },
+          }
+      );
+      return data;
+  };
   
-    const {
-      data: userProfileData,
-      isLoading: isUserProfileLoading,
-      isError: isUserProfileError,
-    } = useQuery({
-      queryKey: ["user-profile", session?.data?.user.email],
-      queryFn: () => fetchUserProfile(session?.data?.user.email),
-      enabled: !!session, // Only fetch data if the session is available
-    });
+  const {
+    data: dataUsers,
+    isLoading: isLoadinUsers,
+    isError: isErrorUsers,
+} = useQuery({
+    queryKey: ["user-profile"],
+    queryFn: fetchUsers,
+});
 
     const {
         data: dataCourses,
@@ -87,9 +93,9 @@ export default function ShowProfileCard() {
         queryFn: fetchCountries,
     });
   
-    if (isUserProfileLoading) {
+    if (isLoadinUsers) {
       return <Loader2 height="100px" width="100px" className="animate-spin" />;
-    } else if (isUserProfileError) {
+    } else if (isErrorUsers) {
       return (
         <div className="flex flex-col gap-2 justify-center items-center">
           <Ban color="#ff0000" height="100px" width="100px" />
@@ -97,7 +103,7 @@ export default function ShowProfileCard() {
         </div>
       );
     }
-    console.log("student values:",userProfileData?.student);
+    console.log("student values:",dataUsers?.student);
     return (
         <Card className="w-[500px]">
           <CardHeader>
@@ -113,7 +119,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Email Address</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{userProfileData?.user?.email}</p>
+                        <p className="text-base py-2">{dataUsers?.user?.email}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -126,7 +132,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Contact Number</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{userProfileData?.user?.phone}</p>
+                        <p className="text-base py-2">{dataUsers?.user?.phone}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -139,7 +145,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">First Name</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{userProfileData?.user?.first_name}</p>
+                        <p className="text-base py-2">{dataUsers?.user?.first_name}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -152,7 +158,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Last Name</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{userProfileData?.user?.last_name}</p>
+                        <p className="text-base py-2">{dataUsers?.user?.last_name}</p>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -166,7 +172,7 @@ export default function ShowProfileCard() {
                       <FormLabel className="text-xl">Date of Birth</FormLabel>
                       <FormControl>
                         <p className="text-base py-2">{format(
-                            new Date(userProfileData?.user?.dob),
+                            new Date(dataUsers?.user?.dob),
                             "PPP"
                           )}
                         </p>
@@ -182,7 +188,7 @@ export default function ShowProfileCard() {
                     <FormItem>
                       <FormLabel className="text-xl">Nationality</FormLabel>
                       <FormControl>
-                        <p className="text-base py-2">{dataCountries?.find((country) => country.code === userProfileData?.user?.nationality)?.name}
+                        <p className="text-base py-2">{dataCountries?.find((country) => country.code === dataUsers?.user?.nationality)?.name}
                         </p>
                       </FormControl>
                       <FormMessage />
@@ -198,7 +204,7 @@ export default function ShowProfileCard() {
                         <FormItem>
                           <FormLabel className="text-xl">Student ID</FormLabel>
                           <FormControl>
-                            <p className="text-base py-2" >{userProfileData?.student?.student_id}
+                            <p className="text-base py-2" >{dataUsers?.student?.student_id}
                             </p>
                           </FormControl>
                           <FormMessage />
@@ -212,7 +218,7 @@ export default function ShowProfileCard() {
                         <FormItem>
                           <FormLabel className="text-xl">Course</FormLabel>
                           <FormControl>
-                          <p className="text-base py-2" >{userProfileData?.student?.course_names}
+                          <p className="text-base py-2" >{dataUsers?.student?.course_names}
                             </p>
                           </FormControl>
                           <FormMessage />
@@ -229,7 +235,7 @@ export default function ShowProfileCard() {
                         <FormLabel className="text-xl">Designation</FormLabel>
                         <FormControl>
                             <p className="text-base py-2">
-                          {userProfileData?.teacher?.designation}
+                          {dataUsers?.teacher?.designation}
                           </p>
                         </FormControl>
                         <FormMessage />
