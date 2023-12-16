@@ -5,6 +5,7 @@ import { siteConfig } from "@/config/site";
 import { useSession } from "next-auth/react";
 import { Sidebar } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
+import UserButton from "./user-button";
 
 export default function Nav() {
   const { data: session } = useSession();
@@ -17,8 +18,7 @@ export default function Nav() {
             <Sidebar />
             <Link href={siteConfig.logo.url}>
               <div className="flex gap-2 items-center">
-                <siteConfig.logo.icon className="h-6 w-6" />
-                <p className="font-bold">{siteConfig.name}</p>
+                <siteConfig.logo.icon className="h-32 w-32" />
               </div>
             </Link>
           </div>
@@ -36,9 +36,7 @@ export default function Nav() {
         </div>
         <div className="flex items-center gap-3">
           {session?.user ? (
-            <Link href={"/api/auth/signout"}>
-              <Button variant={"secondary"}>Log Out</Button>
-            </Link>
+            <UserButton name={session.user.name!} />
           ) : (
             <Link href={"/signin"}>
               <Button variant={"secondary"}>Sign In</Button>

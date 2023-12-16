@@ -33,15 +33,21 @@ export const siteConfig = {
         icon: Icons.bookMarked,
       },
       {
-        title: "Manage Students",
+        title: "Manage Courses",
         href: "/courses",
-        icon: Icons.users,
+        icon: Icons.binary,
       },
       {
         title: "Absentee Requests",
         href: "/absentee",
         icon: Icons.scrollText,
       },
+      {
+        title: "Enroll Students",
+        href: "/enrol-students",
+        icon: Icons.graduationCap,
+      },
+
     ],
     student: [
       {
@@ -55,13 +61,13 @@ export const siteConfig = {
         icon: Icons.bookA,
       },
       {
-        title: "View Classes",
-        href: "/classes",
-        icon: Icons.bookMarked,
+        title: "View Courses",
+        href: "/courses",
+        icon: Icons.binary,
       },
       {
-        title: "View Result",
-        href: "/settings",
+        title: "View Classes",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
@@ -97,13 +103,8 @@ export const siteConfig = {
         icon: Icons.users,
       },
       {
-        title: "Manage Teachers",
-        href: "/signup",
-        icon: Icons.users,
-      },
-      {
         title: "Enroll Students",
-        href: "/signup",
+        href: "/enrol-students",
         icon: Icons.graduationCap,
       },
     ],

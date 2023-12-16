@@ -169,7 +169,7 @@ export default function StudentEnrollment() {
 
 
   if (
-    // isLoadingStudents || 
+    isLoadingStudents || 
     isLoadingCourse) {
     return <Loader2 height="100px" width="100px" className="animate-spin" />;
   } else if (isErrorCourse 
