@@ -12,88 +12,99 @@ export const siteConfig = {
   mainNav: [
     {
       title: "Dashboard",
-      href: "/dashboard",
+      href: "/",
     },
   ],
   sideNav: {
     teacher: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "Manage Attendance",
-        href: "/attendance",
+        href: "/classes",
         icon: Icons.bookA,
       },
       {
         title: "Manage Classes",
-        href: "/students",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
-        title: "Manage Students",
-        href: "/settings",
-        icon: Icons.users,
+        title: "Manage Courses",
+        href: "/courses",
+        icon: Icons.binary,
       },
+      {
+        title: "Absentee Requests",
+        href: "/absentee",
+        icon: Icons.scrollText,
+      },
+      {
+        title: "Enroll Students",
+        href: "/enrol-students",
+        icon: Icons.graduationCap,
+      },
+
     ],
     student: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "View Attendance",
-        href: "/attendance",
+        href: "/courses",
         icon: Icons.bookA,
       },
       {
-        title: "View Classes",
-        href: "/students",
-        icon: Icons.bookMarked,
+        title: "View Courses",
+        href: "/courses",
+        icon: Icons.binary,
       },
       {
-        title: "View Result",
-        href: "/settings",
+        title: "View Classes",
+        href: "/classes",
         icon: Icons.bookMarked,
       },
       {
         title: "Absentee Application",
-        href: "/settings",
+        href: "/absentee",
         icon: Icons.scrollText,
       },
     ],
     admin: [
       {
         title: "Dashboard",
-        href: "/dashboard",
+        href: "/",
         icon: Icons.layoutDashboard,
       },
       {
         title: "Manage Attendance",
-        href: "/attendance",
+        href: "/classes",
         icon: Icons.bookA,
       },
       {
         title: "Manage Classes",
-        href: "/students",
+        href: "/classes",
+        icon: Icons.bookMarked,
+      },
+      {
+        title: "Manage Courses",
+        href: "/courses",
         icon: Icons.bookMarked,
       },
       {
         title: "Manage Students",
-        href: "/settings",
-        icon: Icons.users,
-      },
-      {
-        title: "Manage Teachers",
-        href: "/settings",
+        href: "/courses",
         icon: Icons.users,
       },
       {
         title: "Enroll Students",
-        href: "/settings",
+        href: "/enrol-students",
         icon: Icons.graduationCap,
       },
     ],

@@ -2,6 +2,7 @@
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetHeader,
   SheetTitle,
@@ -31,13 +32,22 @@ export function Sidebar() {
         <div className="flex flex-col py-4 min-h-full justify-between">
           <div className="flex flex-col gap-4">
             {role &&
-              // @ts-ignore
-              siteConfig.sideNav[role].map((item, i) => (
-                <Button key={i} variant={"outline"}>
-                  <item.icon height="20px" width="20px" className="mr-2" />
-                  {item.title}
-                </Button>
-              ))}
+              siteConfig.sideNav[role as keyof typeof siteConfig.sideNav].map(
+                (item, i) => (
+                  <SheetClose key={i} asChild>
+                    <Link href={item.href}>
+                      <Button className="w-full" variant={"outline"}>
+                        <item.icon
+                          height="20px"
+                          width="20px"
+                          className="mr-2"
+                        />
+                        {item.title}
+                      </Button>
+                    </Link>
+                  </SheetClose>
+                )
+              )}
           </div>
           <Link href="/api/auth/signout">
             <Button className="w-full">

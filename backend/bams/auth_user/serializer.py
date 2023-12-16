@@ -1,8 +1,9 @@
 from rest_framework.serializers import ModelSerializer
 from .models import User
+from django_countries.serializers import CountryFieldMixin
 
 
-class UserSerializer(ModelSerializer):
+class UserSerializer(CountryFieldMixin, ModelSerializer):
     class Meta:
         model = User
         fields = [
