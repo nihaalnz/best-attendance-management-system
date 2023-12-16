@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as UA
 from .models import User
 
+admin.site.site_header = "BAMS Admin"
 @admin.register(User)
 class UserAdmin(UA):
     fieldsets = (
