@@ -36,7 +36,7 @@ export default function Nav() {
         </div>
         <div className="flex items-center gap-3">
           {session?.user ? (
-            <UserButton name={session.user.name!} />
+            <UserButton name={session.user.name!} role={session.user.role!}/>
           ) : (
             <Link href={"/signin"}>
               <Button variant={"secondary"}>Sign In</Button>

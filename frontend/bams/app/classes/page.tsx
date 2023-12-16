@@ -88,13 +88,13 @@ export default function Mark() {
     isError: isErrorCourse,
     isLoading: isLoadingCourse,
   } = useQuery({
-    queryKey: ["courses"],
+    queryKey: ["courses", courseId],
     queryFn: async () => {
       return await getUserCourses(session?.data?.user.token!);
     },
   });
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading || isLoadingCourse) return <div>Loading...</div>;
   return (
     <div>
       <div className="flex justify-between">
@@ -167,9 +167,10 @@ export default function Mark() {
           <Button className="self-end" onClick={() => refetch()}>
             Filter
           </Button>
-          {course && <ExportCourseData date={date} courseCode={courseData?.data.find((val: any) => val.id === course )?.code} courseId={course} />}
+          {course && session?.data?.user.role !== 'student' && <ExportCourseData date={date} courseCode={courseData?.data.find((val: any) => val.id === course )?.code} courseId={course} />}
         </div>
-        <div className="flex gap-10 mt-5 flex-wrap">
+        <Label>Total result(s) fetched: {data?.data?.length}</Label>
+        <div className="grid grid-cols-4 gap-10 mt-5 flex-wrap">
           {data?.data.map((item: any) => (
             <ClassCard
               id={item.id}

@@ -2,6 +2,7 @@
 
 import CourseCard from "@/components/course-card";
 import AddCourseDiaglog from "@/components/course-dialog";
+import { Label } from "@/components/ui/label";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import { useSession } from "next-auth/react";
@@ -35,7 +36,9 @@ export default function Mark() {
         {session?.data?.user?.role == "admin" && <AddCourseDiaglog />}
       </div>
       <div className="mt-10">
-        <div className="flex gap-11 mt-5 flex-wrap">
+        <Label>Total result(s): {data?.length}</Label>
+
+        <div className="grid grid-cols-4 gap-11 mt-5">
           {data?.map((item: any) => (
             <CourseCard
               id={item.id}

@@ -55,6 +55,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Combobox } from "./combobox";
+import { useRouter } from "next/navigation";
 
 type backEndErrors = {
   [key: string]: string[];
@@ -126,6 +127,7 @@ async function fetchCountries() {
 
 export default function SignUpForm() {
   const { toast } = useToast();
+  const router = useRouter();
 
   const {
     data: dataCourses,
@@ -174,6 +176,7 @@ export default function SignUpForm() {
         description: `Successfully created account.`,
       });
       // form.reset();
+      router.push('/')
     },
     onError: (error: AxiosError) => {
       const { response } = error;
