@@ -1,4 +1,10 @@
-# BAMS - Best Attendance Management System
+<div align="center">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="/frontend/bams/public/logo-light.svg">
+        <img alt="White CHQ logo in dark mode and dark CHQ logo in light mode" src="/frontend/bams/public/logo.svg" width="500">
+    </picture>
+    <h1>BAMS - Best Attendance Management System</h1>
+</div>
 
 ## Overview
 Revolutionizing attendance tracking, our system boasts a modern UI that empowers teachers, administrators, and students with intuitive interfaces. Effortlessly manage and monitor attendance, providing a seamless experience for all stakeholders. A paradigm shift in attendance management, ensuring clarity, efficiency, and engagement.
@@ -8,12 +14,11 @@ Revolutionizing attendance tracking, our system boasts a modern UI that empowers
 
 1. [Features](#features)
 2. [Installation](#installation)
-3. [Usage](#usage)
-4. [Project Structure](#project-structure)
-5. [Technologies Used](#technologies-used)
-6. [UI](#ui)
-7. [Contributing](#contributing)
-8. [License](#license)
+3. [Project Structure](#project-structure)
+4. [Technologies Used](#technologies-used)
+5. [UI](#ui)
+6. [Contributing](#contributing)
+7. [License](#license)
 
 ## Features
 
